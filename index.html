@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA TODO App</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a202c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+
+    <!-- Icons Library -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
+        }
+        .fab-button {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.2s ease-in-out;
+        }
+        .fab-button:hover {
+            transform: scale(1.05);
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+        }
+        .modal {
+            display: none;
+            max-height: 90vh;
+        }
+        .modal.active, .modal-backdrop.active {
+            display: flex;
+        }
+        .tag-header {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white antialiased">
+
+    <div id="app" class="h-screen w-screen flex flex-col">
+        <!-- Main Content -->
+        <main class="flex-grow overflow-y-auto pb-20">
+            <!-- TODO List Tab -->
+            <div id="tab-todo" class="tab-content p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h1 id="todo-list-title" class="text-2xl font-bold">未完了タスク</h1>
+                    <div class="relative">
+                        <input type="search" id="todo-search" placeholder="タスクを検索..." class="bg-gray-700 border border-gray-600 rounded-full py-2 px-4 w-40 sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div id="todo-list-container">
+                    <!-- TODO items will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Memo Tab -->
+            <div id="tab-memo" class="tab-content p-4 h-full flex flex-col hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h1 class="text-2xl font-bold">自由記述メモ</h1>
+                </div>
+                 <div class="flex items-center gap-2 mb-2">
+                    <select id="memo-page-select" class="flex-grow bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                    <button id="btn-add-memo-page" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg"><i data-lucide="plus"></i></button>
+                    <!-- メモ編集ボタンを追加 -->
+                    <button id="btn-edit-memo-page" class="bg-yellow-600 hover:bg-yellow-700 text-white p-2 rounded-lg"><i data-lucide="pencil"></i></button>
+                    <button id="btn-delete-memo-page" class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"><i data-lucide="trash-2"></i></button>
+                </div>
+                <textarea id="memo-textarea" class="w-full flex-grow bg-gray-800 border border-gray-700 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ここにメモを入力... (自動保存されます)"></textarea>
+            </div>
+
+            <!-- Reminders Tab -->
+            <div id="tab-reminders" class="tab-content p-4 hidden">
+                <h1 class="text-2xl font-bold mb-4">リマインダー設定</h1>
+                <div id="reminders-list-container">
+                    <!-- Reminders list will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="tab-settings" class="tab-content p-4 space-y-6 hidden">
+                <h1 class="text-2xl font-bold">設定</h1>
+                 <div class="bg-gray-800 p-4 rounded-lg">
+                    <h2 class="text-lg font-semibold mb-2">操作方法</h2>
+                    <button id="btn-show-help" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg w-full">アプリの使い方を見る</button>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h2 class="text-lg font-semibold mb-2">表示設定</h2>
+                    <div class="space-y-2">
+                        <div>
+                            <label for="setting-font-size" class="block">文字サイズ</label>
+                            <input type="range" id="setting-font-size" min="12" max="24" value="16" class="w-full">
+                        </div>
+                        <div>
+                            <label for="setting-bg-color" class="block">背景色</label>
+                            <input type="color" id="setting-bg-color" value="#1a202c" class="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
+                        </div>
+                         <div>
+                            <label for="setting-text-color" class="block">文字色</label>
+                            <input type="color" id="setting-text-color" value="#ffffff" class="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h2 class="text-lg font-semibold mb-2">データ管理</h2>
+                     <div class="flex space-x-2">
+                        <button id="btn-export" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg w-full">エクスポート</button>
+                        <button id="btn-import" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full">インポート</button>
+                        <input type="file" id="import-file" class="hidden" accept=".json">
+                    </div>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h2 class="text-lg font-semibold mb-2">リセット</h2>
+                    <button id="btn-reset-frequency" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg w-full">移動回数をリセット</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Floating Action Buttons -->
+        <div id="fab-container" class="fixed bottom-20 right-5 z-20 space-y-3 flex flex-col items-center">
+            <button id="btn-add-todo" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 fab-button">
+                <i data-lucide="plus"></i>
+            </button>
+            <button id="btn-manage-tags" class="bg-gray-600 hover:bg-gray-700 text-white rounded-full p-3 fab-button text-sm">
+                <i data-lucide="tags"></i>
+            </button>
+            <button id="btn-toggle-view" class="bg-purple-600 hover:bg-purple-700 text-white rounded-full p-3 fab-button text-sm">
+                <i data-lucide="archive"></i>
+            </button>
+        </div>
+
+        <!-- Bottom Tab Navigation (順序変更) -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 flex justify-around">
+            <button data-tab="todo" class="tab-button flex-1 p-3 flex flex-col items-center text-blue-400">
+                <i data-lucide="list-checks"></i>
+                <span class="text-xs mt-1">TODO</span>
+            </button>
+            <button data-tab="reminders" class="tab-button flex-1 p-3 flex flex-col items-center text-gray-400">
+                <i data-lucide="alarm-clock"></i>
+                <span class="text-xs mt-1">リマインダー</span>
+            </button>
+            <button data-tab="memo" class="tab-button flex-1 p-3 flex flex-col items-center text-gray-400">
+                <i data-lucide="notebook-pen"></i>
+                <span class="text-xs mt-1">メモ</span>
+            </button>
+            <button data-tab="settings" class="tab-button flex-1 p-3 flex flex-col items-center text-gray-400">
+                <i data-lucide="settings"></i>
+                <span class="text-xs mt-1">設定</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modal Backdrop -->
+    <div id="modal-backdrop" class="modal-backdrop fixed inset-0 z-40"></div>
+    
+    <!-- Add/Edit TODO Modal -->
+    <div id="modal-add-todo" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-md overflow-y-auto p-6 space-y-4">
+            <h2 id="modal-todo-title" class="text-xl font-bold">新しいTODOを追加</h2>
+            <input type="hidden" id="todo-id">
+            <div>
+                <label for="todo-text" class="block mb-1">内容</label>
+                <input type="text" id="todo-text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block mb-1">タグ</label>
+                <div id="todo-tags-container" class="flex flex-wrap gap-2"></div>
+            </div>
+             <div>
+                <label for="todo-priority" class="block mb-1">優先度</label>
+                <select id="todo-priority" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="0">低</option>
+                    <option value="1" selected>中</option>
+                    <option value="2">高</option>
+                </select>
+            </div>
+            <div>
+                <label for="todo-due-date" class="block mb-1">期限日</label>
+                <input type="date" id="todo-due-date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="todo-retention" class="block mb-1">完了時の動作</label>
+                <select id="todo-retention" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="retain">完了ボックスへ移動</option>
+                    <option value="delete">完全に消去</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button id="btn-cancel-todo" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">キャンセル</button>
+                <button id="btn-save-todo" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Tags Modal -->
+    <div id="modal-manage-tags" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
+            <h2 class="text-xl font-bold">タグ管理</h2>
+            <div class="flex space-x-2">
+                <input type="text" id="new-tag-name" placeholder="新しいタグ名" class="flex-grow bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="color" id="new-tag-color" value="#3b82f6" class="w-12 h-10 p-1 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
+                <button id="btn-add-tag" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-lg"><i data-lucide="plus"></i></button>
+            </div>
+            <div id="tags-list" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- Tag list will be rendered here -->
+            </div>
+            <div class="flex justify-end">
+                <button id="btn-close-tags-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder Modal -->
+    <div id="modal-reminder" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
+            <h2 class="text-xl font-bold">リマインダー設定</h2>
+            <input type="hidden" id="reminder-todo-id">
+            <div id="reminder-suggestion" class="text-sm text-blue-300 bg-blue-900/50 p-2 rounded-md hidden"></div>
+            <div>
+                <label for="reminder-start-date" class="block mb-1">開始日</label>
+                <input type="date" id="reminder-start-date" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2">
+            </div>
+             <div>
+                <label for="reminder-period" class="block mb-1">周期</label>
+                <select id="reminder-period" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2">
+                    <option value="none">なし</option>
+                    <option value="daily">毎日</option>
+                    <option value="weekly">毎週</option>
+                    <option value="monthly">毎月</option>
+                    <option value="yearly">毎年</option>
+                </select>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" id="reminder-auto-off" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                <label for="reminder-auto-off" class="ml-2">日付が変わったら自動で完了にする</label>
+            </div>
+            <div class="flex justify-end space-x-2">
+                 <button id="btn-delete-reminder" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">リマインダー削除</button>
+                <button id="btn-cancel-reminder" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">キャンセル</button>
+                <button id="btn-save-reminder" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help/How-to-Use Modal -->
+    <div id="modal-help" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold">アプリの基本的な使い方</h2>
+                <button id="btn-close-help-modal-icon" class="text-gray-400 hover:text-white"><i data-lucide="x"></i></button>
+            </div>
+            <div class="text-gray-300 space-y-4">
+                <p>このアプリの基本的な操作方法をご説明します。</p>
+                
+                <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">画面の切り替え</h3>
+                    <p class="text-sm">画面下部のメニューアイコン（TODO, リマインダー, メモ, 設定）を押すと、各機能の画面に切り替わります。</p>
+                </div>
+
+                <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">タスクの追加</h3>
+                    <p class="text-sm">「TODO」画面の右下にある青い<span class="inline-flex items-center justify-center bg-blue-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="plus" class="w-4 h-4"></i></span>ボタンを押すと、新しいタスクの入力画面が開きます。</p>
+                </div>
+                <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">タスクの完了と未完了への復帰</h3>
+                    <p class="text-sm">「TODO」画面で、各タスクの左側にあるチェックボックスにチェックを入れると、そのタスクは「完了済み」になります。逆に、「完了済みタスク」の一覧でチェックを外すと、タスクは「未完了」に戻ります。</p>
+                </div>
+                <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">完了済みタスクの表示</h3>
+                    <p class="text-sm">「TODO」画面の右下にある紫の<span class="inline-flex items-center justify-center bg-purple-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="archive" class="w-4 h-4"></i></span>ボタンを押すと、「完了済みタスク」の一覧に切り替わります。もう一度押すと「未完了タスク」の表示に戻ります。</p>
+                </div>
+                 <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">リマインダーの設定</h3>
+                    <p class="text-sm">「リマインダー」タブを開き、設定したいタスクをタップすると、周期や開始日を設定できます。「自動で完了」をオンにすると、毎週の特売日のような、日付が変わると自動で終わるタスクを完了済みに移動させることができます。</p>
+                </div>
+                 <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">タグの管理</h3>
+                    <p class="text-sm">「TODO」画面の右下にあるグレーの<span class="inline-flex items-center justify-center bg-gray-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="tags" class="w-4 h-4"></i></span>ボタンを押すと、「タグ管理」画面が開き、新しいタグの作成や削除ができます。</p>
+                </div>
+                <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">タスクの編集と削除</h3>
+                    <p class="text-sm">各タスクの右側にある<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="pencil" class="w-4 h-4"></i></span>ボタンで編集、<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="trash-2" class="w-4 h-4"></i></span>ボタンで削除ができます。</p>
+                </div>
+                <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">移動回数のリセット</h3>
+                    <p class="text-sm">「設定」タブの「移動回数をリセット」ボタンを押すと、全タスクの完了回数がリセットされます。これは「完了済みタスク」一覧の並び順に影響します。</p>
+                </div>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button id="btn-close-help-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Memo Page Modal -->
+    <div id="modal-add-memo-page" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 class="text-xl font-bold">新しいメモページ</h2>
+            <div>
+                <label for="new-memo-page-name" class="block mb-1">ページタイトル</label>
+                <input type="text" id="new-memo-page-name" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button id="btn-cancel-add-memo-page" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">キャンセル</button>
+                <button id="btn-save-add-memo-page" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">作成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Memo Page Modal (追加) -->
+    <div id="modal-rename-memo-page" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 class="text-xl font-bold">メモページの名称変更</h2>
+            <div>
+                <label for="rename-memo-page-name" class="block mb-1">新しいページタイトル</label>
+                <input type="text" id="rename-memo-page-name" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button id="btn-cancel-rename-memo-page" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">キャンセル</button>
+                <button id="btn-save-rename-memo-page" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Confirmation Modal -->
+    <div id="modal-confirm" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 id="confirm-title" class="text-xl font-bold">確認</h2>
+            <p id="confirm-message" class="text-gray-300 whitespace-pre-wrap"></p>
+            <div class="flex justify-end space-x-2">
+                <button id="btn-confirm-cancel" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">キャンセル</button>
+                <button id="btn-confirm-ok" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">実行</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Info Modal -->
+    <div id="modal-info" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 id="info-title" class="text-xl font-bold">情報</h2>
+            <p id="info-message" class="text-gray-300"></p>
+            <div class="flex justify-end">
+                <button id="btn-info-ok" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+// =================================================================================
+// PWA TODO App - Main JavaScript Logic (v2.1)
+// =================================================================================
+(function() {
+    'use strict';
+
+    // --- CONSTANTS ---
+    const DEADLINE_TAG_NAME = '締め切り有';
+
+    // --- STATE MANAGEMENT ---
+    const state = {
+        currentTab: 'todo',
+        isDoneView: false,
+        todos: [],
+        tags: [],
+        memos: [],
+        activeMemoId: null,
+        settings: {
+            fontSize: '16px',
+            bgColor: '#1a202c',
+            textColor: '#ffffff',
+        },
+        editingTodoId: null,
+        editingReminderTodoId: null,
+        selectedTags: new Set(),
+        userExpandedTags: new Set(), // ユーザーが明示的に開いたタグ
+        userCollapsedTags: new Set(), // ユーザーが明示的に閉じたタグ
+    };
+
+    // --- DATABASE (IndexedDB) ---
+    const DB_NAME = 'pwaTodoAppDB';
+    const DB_VERSION = 2; // 
+    let db;
+    let confirmCallback = null;
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+            request.onerror = (event) => reject('Database error: ' + event.target.errorCode);
+            
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                resolve();
+            };
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('todos')) {
+                    db.createObjectStore('todos', { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains('tags')) {
+                    db.createObjectStore('tags', { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('memos')) {
+                    db.createObjectStore('memos', { keyPath: 'id' });
+                }
+            };
+        });
+    }
+
+    function dbTransaction(storeName, mode) {
+        if (!db) {
+            console.error("Database is not initialized.");
+            return null; // or throw error
+        }
+        const transaction = db.transaction(storeName, mode);
+        return transaction.objectStore(storeName);
+    }
+    
+    async function dbGetAll(storeName) {
+        return new Promise((resolve, reject) => {
+            const store = dbTransaction(storeName, 'readonly');
+            if (!store) return reject('Database transaction failed.');
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject('Error fetching all from ' + storeName + ': ' + event.target.errorCode);
+        });
+    }
+
+    async function dbPut(storeName, data) {
+         return new Promise((resolve, reject) => {
+            const store = dbTransaction(storeName, 'readwrite');
+            if (!store) return reject('Database transaction failed.');
+            const request = store.put(data);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject('Error putting data in ' + storeName + ': ' + event.target.errorCode);
+        });
+    }
+    
+    async function dbDelete(storeName, key) {
+        return new Promise((resolve, reject) => {
+            const store = dbTransaction(storeName, 'readwrite');
+            if (!store) return reject('Database transaction failed.');
+            const request = store.delete(key);
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject('Error deleting data from ' + storeName + ': ' + event.target.errorCode);
+        });
+    }
+
+    // --- UTILITY FUNCTIONS ---
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    // --- UI ELEMENTS ---
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => document.querySelectorAll(selector);
+
+    // --- MODAL CONTROLS ---
+    function openModal(modalId) {
+        $('#modal-backdrop').classList.add('active');
+        $(`#${modalId}`).classList.add('active');
+    }
+
+    function closeModal() {
+        $('#modal-backdrop').classList.remove('active');
+        $$('.modal').forEach(modal => modal.classList.remove('active'));
+    }
+
+    function showConfirmModal(message, onConfirm) {
+        $('#confirm-message').textContent = message;
+        confirmCallback = onConfirm;
+        openModal('modal-confirm');
+    }
+
+    function showInfoModal(message, title = '情報') {
+        $('#info-title').textContent = title;
+        $('#info-message').textContent = message;
+        openModal('modal-info');
+    }
+
+
+    // --- RENDERING FUNCTIONS ---
+
+    function render() {
+        // Render current tab based on state
+        switch(state.currentTab) {
+            case 'todo':
+                renderTodos();
+                break;
+            case 'memo':
+                renderMemo();
+                break;
+            case 'reminders':
+                renderReminders();
+                break;
+            case 'settings':
+                renderSettings();
+                break;
+        }
+        applySettings();
+    }
+
+    function renderTodos() {
+        const container = $('#todo-list-container');
+        const searchTerm = $('#todo-search').value.toLowerCase();
+        
+        container.innerHTML = '';
+        const filteredTodos = state.todos.filter(todo => 
+            todo.isDone === state.isDoneView &&
+            todo.text.toLowerCase().includes(searchTerm)
+        );
+
+        filteredTodos.sort((a,b) => (b.priority || 1) - (a.priority || 1) || b.createdAt - a.createdAt);
+
+        if (state.isDoneView) {
+            filteredTodos.sort((a, b) => (b.moveCount || 0) - (a.moveCount || 0));
+        }
+
+        const todosByTag = {};
+        filteredTodos.forEach(todo => {
+            if (todo.tags.length === 0) {
+                if (!todosByTag['タグなし']) todosByTag['タグなし'] = [];
+                todosByTag['タグなし'].push(todo);
+            } else {
+                todo.tags.forEach(tagId => {
+                    const tag = state.tags.find(t => t.id === tagId);
+                    if (tag) {
+                         if (!todosByTag[tag.name]) todosByTag[tag.name] = [];
+                        todosByTag[tag.name].push(todo);
+                    }
+                });
+            }
+        });
+        
+        if (filteredTodos.length === 0) {
+            container.innerHTML = `<div class="text-center text-gray-500 mt-8">タスクはありません。</div>`;
+            return;
+        }
+
+        Object.keys(todosByTag).sort().forEach(tagName => {
+            const tag = state.tags.find(t => t.name === tagName);
+            const tagColor = tag ? tag.color : '#718096';
+            
+            const groupContainer = document.createElement('div');
+            groupContainer.className = 'mb-4 rounded-lg overflow-hidden border-2';
+            groupContainer.style.borderColor = tagColor;
+            
+            // --- NEW: Accordion state logic ---
+            let isCollapsed;
+            if (state.userExpandedTags.has(tagName)) {
+                isCollapsed = false;
+            } else if (state.userCollapsedTags.has(tagName)) {
+                isCollapsed = true;
+            } else {
+                isCollapsed = state.isDoneView; // Default: Done is collapsed, Todo is open
+            }
+            // --- END NEW ---
+
+            const header = document.createElement('h3');
+            header.className = 'tag-header text-md font-bold p-2 text-white flex justify-between items-center';
+            header.style.backgroundColor = tagColor;
+            header.dataset.tagName = tagName;
+            
+            const iconName = isCollapsed ? 'chevron-right' : 'chevron-down'; // Updated
+            header.innerHTML = `
+                <span>${tagName}</span>
+                <i data-lucide="${iconName}" class="accordion-icon"></i>
+            `;
+            groupContainer.appendChild(header);
+            
+            const tasksWrapper = document.createElement('div');
+            tasksWrapper.className = 'tasks-wrapper p-2 space-y-2 bg-gray-800/30';
+            if (isCollapsed) { // Updated
+                tasksWrapper.classList.add('hidden');
+            }
+
+            todosByTag[tagName].forEach(todo => {
+                const dueDateHTML = todo.dueDate ? `<span class="text-xs text-yellow-400 mr-2"><i data-lucide="calendar" class="inline-block w-3 h-3"></i> ${todo.dueDate}</span>` : '';
+                const priorityHTML = ['<i data-lucide="chevrons-down" class="inline-block w-4 h-4 text-blue-400"></i>', '<i data-lucide="minus" class="inline-block w-4 h-4 text-gray-400"></i>', '<i data-lucide="chevrons-up" class="inline-block w-4 h-4 text-red-400"></i>'][todo.priority || 1];
+                
+                const todoEl = document.createElement('div');
+                todoEl.className = "bg-gray-800 rounded-lg p-3 flex items-center";
+                todoEl.dataset.id = todo.id;
+                todoEl.innerHTML = `
+                    <input type="checkbox" ${todo.isDone ? 'checked' : ''} class="todo-checkbox w-6 h-6 mr-3 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-600 ring-offset-gray-800 focus:ring-2">
+                    <div class="flex-grow">
+                       <p class="todo-text">${todo.text}</p>
+                       <div class="text-xs text-gray-400 mt-1">${dueDateHTML}作成日: ${new Date(todo.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        ${priorityHTML}
+                        <button class="btn-edit-todo text-gray-400 hover:text-white"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button class="btn-delete-todo text-gray-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                `;
+                tasksWrapper.appendChild(todoEl);
+            });
+            groupContainer.appendChild(tasksWrapper);
+            container.appendChild(groupContainer);
+        });
+
+        lucide.createIcons();
+    }
+    
+    function renderMemo() {
+        const select = $('#memo-page-select');
+        select.innerHTML = '';
+        state.memos.forEach(memo => {
+            const option = document.createElement('option');
+            option.value = memo.id;
+            option.textContent = memo.name;
+            if (memo.id === state.activeMemoId) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        const activeMemo = state.memos.find(m => m.id === state.activeMemoId);
+        $('#memo-textarea').value = activeMemo ? activeMemo.content : '';
+    }
+    
+    function renderReminders() {
+        const container = $('#reminders-list-container');
+        container.innerHTML = '';
+        if(state.todos.length === 0) {
+             container.innerHTML = `<div class="text-center text-gray-500 mt-8">設定可能なタスクはありません。</div>`;
+            return;
+        }
+
+        state.todos.forEach(todo => {
+            const hasReminder = todo.reminder && todo.reminder.period !== 'none';
+            const reminderText = hasReminder ? `周期: ${todo.reminder.period}, 開始日: ${todo.reminder.startDate}` : 'リマインダー未設定';
+            const item = document.createElement('div');
+            item.className = 'bg-gray-800 rounded-lg p-4 flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-700';
+            item.dataset.id = todo.id;
+            item.innerHTML = `
+                <div>
+                    <p>${todo.text}</p>
+                    <p class="text-sm ${hasReminder ? 'text-green-400' : 'text-gray-400'}">${reminderText}</p>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            `;
+            item.addEventListener('click', () => handleOpenReminderModal(todo.id));
+            container.appendChild(item);
+        });
+        lucide.createIcons();
+    }
+    
+    function renderSettings() {
+        $('#setting-font-size').value = parseInt(state.settings.fontSize, 10);
+        $('#setting-bg-color').value = state.settings.bgColor;
+        $('#setting-text-color').value = state.settings.textColor;
+    }
+
+    function renderTagsInModal() {
+        const container = $('#tags-list');
+        container.innerHTML = '';
+        state.tags.forEach(tag => {
+            const isDeadlineTag = tag.name === DEADLINE_TAG_NAME;
+            const deleteBtnHTML = isDeadlineTag 
+                ? `<span class="text-gray-500"><i data-lucide="lock" class="w-4 h-4"></i></span>`
+                : `<button class="btn-delete-tag text-gray-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+
+            container.innerHTML += `
+                <div class="flex items-center justify-between bg-gray-700 p-2 rounded-lg" data-id="${tag.id}">
+                    <div class="flex items-center">
+                        <span class="w-4 h-4 rounded-full mr-2" style="background-color: ${tag.color};"></span>
+                        <span>${tag.name}</span>
+                    </div>
+                    ${deleteBtnHTML}
+                </div>
+            `;
+        });
+        lucide.createIcons();
+    }
+    
+    function renderTagsForTodo() {
+        const container = $('#todo-tags-container');
+        container.innerHTML = '';
+        state.tags.forEach(tag => {
+            const isSelected = state.selectedTags.has(tag.id);
+            const isDeadlineTag = tag.name === DEADLINE_TAG_NAME;
+            const isDisabled = isDeadlineTag && $('#todo-due-date').value;
+
+            container.innerHTML += `
+                <button 
+                    class="px-3 py-1 text-sm rounded-full border ${isSelected ? 'font-bold' : ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}" 
+                    style="border-color: ${tag.color}; color: ${isSelected ? 'white' : tag.color}; background-color: ${isSelected ? tag.color : 'transparent'};"
+                    data-id="${tag.id}"
+                    ${isDisabled ? 'disabled' : ''}
+                >
+                    ${tag.name}
+                </button>
+            `;
+        });
+    }
+
+    // --- APPLICATION LOGIC ---
+    async function loadData() {
+        try {
+            const [todosFromDb, tags, settings, memos] = await Promise.all([
+                dbGetAll('todos'),
+                dbGetAll('tags'),
+                dbGetAll('settings'),
+                dbGetAll('memos')
+            ]);
+
+            // データ健全性チェック
+            const validTodos = [];
+            const invalidTodoIds = [];
+            todosFromDb.forEach(item => {
+                if (item && typeof item.text === 'string') {
+                    validTodos.push(item);
+                } else if (item && item.id) {
+                    invalidTodoIds.push(item.id);
+                }
+            });
+
+            if (invalidTodoIds.length > 0) {
+                console.warn('Removing invalid items from todos store:', invalidTodoIds);
+                for (const id of invalidTodoIds) {
+                    await dbDelete('todos', id);
+                }
+            }
+            
+            state.todos = validTodos;
+            state.tags = tags;
+            state.memos = memos;
+
+            if (state.memos.length === 0) {
+                // 初期メモ名を変更
+                const firstMemo = { id: crypto.randomUUID(), name: 'メモ①', content: '' };
+                state.memos.push(firstMemo);
+                await dbPut('memos', firstMemo);
+            }
+            state.activeMemoId = state.memos[0].id;
+            
+            if(state.tags.length === 0) {
+                 const defaultTags = [
+                    { id: crypto.randomUUID(), name: '買い物', color: '#3498db' }, // 青
+                    { id: crypto.randomUUID(), name: '作業', color: '#2ecc71' }, // 緑
+                    { id: crypto.randomUUID(), name: '手続き', color: '#f1c40f' }, // 黄
+                    { id: crypto.randomUUID(), name: '連絡', color: '#9b59b6' }, // 紫 (変更)
+                 ];
+                 for (const tag of defaultTags) {
+                     await dbPut('tags', tag);
+                     state.tags.push(tag);
+                 }
+            }
+            
+            if (!state.tags.some(t => t.name === DEADLINE_TAG_NAME)) {
+                const deadlineTag = { id: crypto.randomUUID(), name: DEADLINE_TAG_NAME, color: '#ef4444' };
+                await dbPut('tags', deadlineTag);
+                state.tags.push(deadlineTag);
+            }
+
+            settings.forEach(setting => {
+                state.settings[setting.key] = setting.value;
+            });
+
+            await checkAutoCompletion();
+        } catch (err) {
+            console.error('Failed to load data:', err);
+            showInfoModal(`データの読み込みに失敗しました。アプリを再起動してみてください。\nエラー: ${err.message}`, '重大なエラー');
+        }
+    }
+
+    async function checkAutoCompletion() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const todosToUpdate = state.todos.filter(todo => 
+                !todo.isDone &&
+                todo.reminder?.autoOff &&
+                todo.reminder?.startDate &&
+                today >= todo.reminder.startDate
+            );
+
+            for (const todo of todosToUpdate) {
+                todo.isDone = true;
+                todo.completedAt = Date.now();
+                todo.moveCount = (todo.moveCount || 0) + 1;
+                await dbPut('todos', todo);
+            }
+        } catch (err) {
+            console.error('Auto-completion check failed:', err);
+            showInfoModal(`リマインダーの自動完了処理に失敗しました。\nエラー: ${err.message}`, 'エラー');
+        }
+    }
+    
+    function handleTabClick(e) {
+        const button = e.target.closest('.tab-button');
+        if (button) {
+            state.currentTab = button.dataset.tab;
+            $$('.tab-button').forEach(btn => btn.classList.replace('text-blue-400', 'text-gray-400'));
+            button.classList.replace('text-gray-400', 'text-blue-400');
+            $$('.tab-content').forEach(content => content.classList.add('hidden'));
+            $(`#tab-${state.currentTab}`).classList.remove('hidden');
+            
+            $('#fab-container').style.display = state.currentTab === 'todo' ? 'flex' : 'none';
+
+            render();
+        }
+    }
+    
+    async function handleSaveTodo() {
+        const text = $('#todo-text').value.trim();
+        if (!text) {
+            showInfoModal('タスクの内容を入力してください。');
+            return;
+        }
+
+        try {
+            const dueDate = $('#todo-due-date').value;
+            const deadlineTag = state.tags.find(t => t.name === DEADLINE_TAG_NAME);
+            if (deadlineTag) {
+                if (dueDate) {
+                    state.selectedTags.add(deadlineTag.id);
+                } else {
+                    state.selectedTags.delete(deadlineTag.id);
+                }
+            }
+            
+            const todoData = {
+                id: state.editingTodoId || crypto.randomUUID(),
+                text: text,
+                tags: Array.from(state.selectedTags),
+                isDone: false,
+                createdAt: state.editingTodoId ? (state.todos.find(t=>t.id === state.editingTodoId).createdAt) : Date.now(),
+                updatedAt: Date.now(),
+                completedAt: null,
+                retention: $('#todo-retention').value,
+                priority: parseInt($('#todo-priority').value, 10),
+                dueDate: dueDate || null,
+                moveCount: state.editingTodoId ? (state.todos.find(t=>t.id === state.editingTodoId).moveCount || 0) : 0,
+            };
+            
+            if (state.editingTodoId) {
+                const existingTodo = state.todos.find(t => t.id === state.editingTodoId);
+                todoData.isDone = existingTodo.isDone;
+                todoData.reminder = existingTodo.reminder;
+                const index = state.todos.findIndex(t => t.id === state.editingTodoId);
+                state.todos[index] = todoData;
+            } else {
+                state.todos.push(todoData);
+            }
+
+            await dbPut('todos', todoData);
+            closeModal();
+            renderTodos();
+        } catch (err) {
+            console.error('Failed to save todo:', err);
+            showInfoModal(`タスクの保存に失敗しました。\nエラー: ${err.message}`, '保存エラー');
+        }
+    }
+
+    async function handleToggleTodoStatus(id, isChecked) {
+        const todo = state.todos.find(t => t.id === id);
+        if (!todo) return;
+        
+        try {
+            if (isChecked && todo.retention === 'delete') {
+                await handleDeleteTodo(id); // handleDeleteTodo already has confirmation
+                return;
+            }
+
+            todo.isDone = isChecked;
+            if (isChecked) {
+                 todo.completedAt = Date.now();
+                 todo.moveCount = (todo.moveCount || 0) + 1;
+            } else {
+                todo.lastCompletedAt = todo.completedAt;
+            }
+            await dbPut('todos', todo);
+            // We re-render slightly delayed to let the check animation finish
+            setTimeout(renderTodos, 200);
+        } catch (err) {
+            console.error('Failed to toggle todo status:', err);
+            showInfoModal(`タスクの状態変更に失敗しました。\nエラー: ${err.message}`, 'エラー');
+            // Revert checkbox state on error
+            const checkbox = $(`[data-id="${id}"] .todo-checkbox`);
+            if(checkbox) checkbox.checked = !isChecked;
+        }
+    }
+    
+    async function handleDeleteTodo(id) {
+        const todo = state.todos.find(t => t.id === id);
+        if (!todo) return;
+        showConfirmModal(`タスク「${todo.text}」を完全に削除しますか？`, async () => {
+            try {
+                state.todos = state.todos.filter(t => t.id !== id);
+                await dbDelete('todos', id);
+                render();
+            } catch (err) {
+                console.error('Failed to delete todo:', err);
+                showInfoModal(`タスクの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
+                // Re-add todo to state if deletion failed (though it might be out of sync)
+                state.todos.push(todo); // Consider better error recovery
+            }
+        });
+    }
+    
+    async function handleAddTag() {
+        const inputEl = $('#new-tag-name');
+        const name = inputEl.value.trim();
+        inputEl.classList.remove('border-red-500');
+
+        if (!name) {
+            showInfoModal('タグ名を入力してください。');
+            inputEl.classList.add('border-red-500');
+            return;
+        }
+        if (state.tags.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+            showInfoModal('同じ名前のタグが既に存在します。');
+            inputEl.classList.add('border-red-500');
+            return;
+        }
+        if (name === DEADLINE_TAG_NAME) {
+            showInfoModal(`「${DEADLINE_TAG_NAME}」は予約されたタグ名のため使用できません。`);
+            inputEl.classList.add('border-red-500');
+            return;
+        }
+
+        try {
+            const newTag = {
+                id: crypto.randomUUID(),
+                name: name,
+                color: $('#new-tag-color').value
+            };
+            state.tags.push(newTag);
+            await dbPut('tags', newTag);
+            $('#new-tag-name').value = '';
+            renderTagsInModal();
+        } catch (err) {
+            console.error('Failed to add tag:', err);
+            showInfoModal(`タグの追加に失敗しました。\nエラー: ${err.message}`, 'エラー');
+            state.tags = state.tags.filter(t => t.name !== name); // Revert state
+        }
+    }
+    
+    async function handleDeleteTag(id) {
+        const tagToDelete = state.tags.find(t => t.id === id);
+        if (!tagToDelete) return;
+        if (tagToDelete.name === DEADLINE_TAG_NAME) {
+            showInfoModal('この予約されたタグは削除できません。');
+            return;
+        }
+        
+        showConfirmModal(`タグ「${tagToDelete.name}」を削除しますか？\n関連するTODOからこのタグが削除されます。`, async () => {
+            try {
+                state.tags = state.tags.filter(t => t.id !== id);
+                await dbDelete('tags', id);
+                
+                const updatePromises = state.todos
+                    .filter(todo => todo.tags.includes(id))
+                    .map(todo => {
+                        todo.tags = todo.tags.filter(tagId => tagId !== id);
+                        return dbPut('todos', todo);
+                    });
+                await Promise.all(updatePromises);
+                
+                renderTagsInModal();
+                if (state.currentTab === 'todo') renderTodos();
+            } catch (err) {
+                console.error('Failed to delete tag:', err);
+                showInfoModal(`タグの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
+                state.tags.push(tagToDelete); // Revert state
+            }
+        });
+    }
+    
+    async function handleSaveReminder() {
+        const todo = state.todos.find(t => t.id === state.editingReminderTodoId);
+        if (!todo) return;
+        
+        try {
+            todo.reminder = {
+                startDate: $('#reminder-start-date').value,
+                period: $('#reminder-period').value,
+                autoOff: $('#reminder-auto-off').checked
+            };
+            
+            await dbPut('todos', todo);
+            closeModal();
+            renderReminders();
+        } catch (err) {
+            console.error('Failed to save reminder:', err);
+            showInfoModal(`リマインダーの保存に失敗しました。\nエラー: ${err.message}`, '保存エラー');
+        }
+    }
+    
+    async function handleDeleteReminder() {
+         const todo = state.todos.find(t => t.id === state.editingReminderTodoId);
+        if (!todo) return;
+        
+        try {
+            const oldReminder = todo.reminder;
+            todo.reminder = null;
+            await dbPut('todos', todo);
+            closeModal();
+            renderReminders();
+        } catch (err) {
+            console.error('Failed to delete reminder:', err);
+            showInfoModal(`リマインダーの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
+            todo.reminder = oldReminder; // Revert state
+        }
+    }
+    
+    function handleOpenReminderModal(id) {
+        state.editingReminderTodoId = id;
+        const todo = state.todos.find(t => t.id === id);
+        if(!todo) return;
+        
+        $('#reminder-todo-id').value = id;
+        $('#reminder-start-date').value = todo.reminder?.startDate || '';
+        $('#reminder-period').value = todo.reminder?.period || 'none';
+        $('#reminder-auto-off').checked = todo.reminder?.autoOff || false;
+
+        if (todo.lastCompletedAt && todo.completedAt) {
+            const diffTime = Math.abs(todo.completedAt - todo.lastCompletedAt);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            $('#reminder-suggestion').textContent = `前回の周期 (${diffDays}日) を候補として登録できます。`;
+            $('#reminder-suggestion').classList.remove('hidden');
+        } else {
+             $('#reminder-suggestion').classList.add('hidden');
+        }
+        
+        openModal('modal-reminder');
+    }
+
+    function applySettings() {
+        const root = document.documentElement;
+        root.style.fontSize = state.settings.fontSize;
+        document.body.style.backgroundColor = state.settings.bgColor;
+        document.body.style.color = state.settings.textColor;
+    }
+    
+    async function handleSettingsChange(key, value) {
+        const oldSettings = {...state.settings};
+        try {
+            state.settings[key] = value;
+            await dbPut('settings', { key: key, value: value });
+            applySettings();
+        } catch (err) {
+            console.error('Failed to save settings:', err);
+            showInfoModal(`設定の保存に失敗しました。\nエラー: ${err.message}`, '保存エラー');
+            state.settings = oldSettings; // Revert state
+            applySettings();
+        }
+    }
+    
+    function exportData() {
+        try {
+            const data = {
+                todos: state.todos,
+                tags: state.tags,
+                settings: state.settings,
+                memos: state.memos,
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `todo-app-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Failed to export data:', err);
+            showInfoModal(`データのエクスポートに失敗しました。\nエラー: ${err.message}`, 'エクスポートエラー');
+        }
+    }
+    
+    function importData() {
+        const fileInput = $('#import-file');
+        fileInput.onchange = e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        showConfirmModal('現在のデータをインポートしたデータで上書きしますか？この操作は元に戻せません。', async () => {
+                            try {
+                                await Promise.all([
+                                    db.transaction('todos', 'readwrite').objectStore('todos').clear(),
+                                    db.transaction('tags', 'readwrite').objectStore('tags').clear(),
+                                    db.transaction('memos', 'readwrite').objectStore('memos').clear(),
+                                    db.transaction('settings', 'readwrite').objectStore('settings').clear(),
+                                ]);
+
+                                await Promise.all([
+                                    ...(data.todos || []).map(t => dbPut('todos', t)),
+                                    ...(data.tags || []).map(t => dbPut('tags', t)),
+                                    ...(data.memos || []).map(t => dbPut('memos', t)),
+                                    ...Object.entries(data.settings || {}).map(([k, v]) => dbPut('settings', {key: k, value: v})),
+                                ]);
+                                await loadData();
+                                render();
+                                showInfoModal('データのインポートが完了しました。');
+                            } catch (err) {
+                                console.error('Import failed during DB write:', err);
+                                showInfoModal(`データのインポート処理中にエラーが発生しました。\nエラー: ${err.message}`, 'インポートエラー');
+                                await loadData(); // Try to reload old data
+                                render();
+                            }
+                        });
+                    } catch (err) {
+                        showInfoModal('ファイルの読み込みに失敗しました。無効なJSONファイルです。');
+                        console.error('Failed to parse import file:', err);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        fileInput.click();
+    }
+    
+    async function resetFrequency() {
+        showConfirmModal('すべてのTODOの移動回数をリセットしますか？', async () => {
+            try {
+                const updatedTodos = state.todos.map(todo => ({ ...todo, moveCount: 0 }));
+                await Promise.all(updatedTodos.map(todo => dbPut('todos', todo)));
+                state.todos = updatedTodos;
+                renderTodos();
+                showInfoModal('リセットが完了しました。');
+            } catch (err) {
+                console.error('Failed to reset frequency:', err);
+                showInfoModal(`リセット処理に失敗しました。\nエラー: ${err.message}`, 'エラー');
+            }
+        });
+    }
+    
+    function handleOpenAddMemoModal() {
+        // 新しいメモのデフォルト名を変更
+        $('#new-memo-page-name').value = `メモ${state.memos.length + 1}`;
+        $('#new-memo-page-name').classList.remove('border-red-500');
+        openModal('modal-add-memo-page');
+    }
+
+    async function handleSaveNewMemoPage() {
+        const name = $('#new-memo-page-name').value.trim();
+        if (name) {
+            try {
+                const newMemo = { id: crypto.randomUUID(), name: name, content: '' };
+                state.memos.push(newMemo);
+                state.activeMemoId = newMemo.id;
+                await dbPut('memos', newMemo);
+                closeModal();
+                renderMemo();
+            } catch (err) {
+                console.error('Failed to save new memo page:', err);
+                showInfoModal(`メモページの作成に失敗しました。\nエラー: ${err.message}`, '保存エラー');
+                state.memos = state.memos.filter(m => m.id !== state.activeMemoId); // Revert
+                state.activeMemoId = state.memos[0]?.id || null;
+            }
+        }
+    }
+
+    // --- メモ名変更のための関数 (追加) ---
+    function handleOpenRenameMemoModal() {
+        const activeMemo = state.memos.find(m => m.id === state.activeMemoId);
+        if (activeMemo) {
+            $('#rename-memo-page-name').value = activeMemo.name;
+            $('#rename-memo-page-name').classList.remove('border-red-500');
+            openModal('modal-rename-memo-page');
+        }
+    }
+
+    async function handleSaveRenameMemoPage() {
+        const newName = $('#rename-memo-page-name').value.trim();
+        if (!newName) {
+            showInfoModal('ページタイトルを入力してください。');
+            $('#rename-memo-page-name').classList.add('border-red-500');
+            return;
+        }
+
+        const activeMemo = state.memos.find(m => m.id === state.activeMemoId);
+        if (activeMemo) {
+            try {
+                activeMemo.name = newName;
+                await dbPut('memos', activeMemo);
+                closeModal();
+                renderMemo(); // 選択肢の表示を更新
+            } catch (err) {
+                console.error('Failed to rename memo page:', err);
+                showInfoModal(`名称の変更に失敗しました。\nエラー: ${err.message}`, '保存エラー');
+            }
+        }
+    }
+    // --- ここまで追加 ---
+
+    async function handleDeleteMemoPage() {
+        if (state.memos.length <= 1) {
+            showInfoModal('最後のメモページは削除できません。');
+            return;
+        }
+        
+        const memoName = state.memos.find(m => m.id === state.activeMemoId).name;
+        showConfirmModal(`「${memoName}」を削除しますか？`, async () => {
+            try {
+                const deletedId = state.activeMemoId;
+                const deletedMemo = state.memos.find(m => m.id === deletedId);
+                state.memos = state.memos.filter(m => m.id !== deletedId);
+                state.activeMemoId = state.memos[0]?.id || null;
+                await dbDelete('memos', deletedId);
+                renderMemo();
+            } catch (err) {
+                 console.error('Failed to delete memo page:', err);
+                showInfoModal(`メモページの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
+                state.memos.push(deletedMemo); // Revert
+                state.activeMemoId = deletedMemo.id;
+            }
+        });
+    }
+    
+    // Debounced memo save function
+    const debouncedSaveMemo = debounce(async (content) => {
+        const activeMemo = state.memos.find(m => m.id === state.activeMemoId);
+        if (activeMemo) {
+            try {
+                activeMemo.content = content;
+                await dbPut('memos', activeMemo);
+            } catch (err) {
+                console.error('Failed to auto-save memo:', err);
+                showInfoModal(`メモの自動保存に失敗しました。\nエラー: ${err.message}`, '保存エラー');
+            }
+        }
+    }, 500); // 500ms delay
+
+    // Debounced search/render function
+    const debouncedRenderTodos = debounce(renderTodos, 300); // 300ms delay
+
+    // --- EVENT LISTENERS ---
+    function setupEventListeners() {
+        $('nav').addEventListener('click', handleTabClick);
+        
+        $('#btn-add-todo').addEventListener('click', () => {
+            state.editingTodoId = null;
+            $('#modal-todo-title').textContent = '新しいTODOを追加';
+            $('#todo-text').value = '';
+            $('#todo-priority').value = '1';
+            $('#todo-due-date').value = '';
+            $('#todo-retention').value = 'retain';
+            state.selectedTags.clear();
+            renderTagsForTodo();
+            openModal('modal-add-todo');
+        });
+        
+        $('#btn-toggle-view').addEventListener('click', () => {
+            state.isDoneView = !state.isDoneView;
+            $('#todo-list-title').textContent = state.isDoneView ? '完了済みタスク' : '未完了タスク';
+            const button = $('#btn-toggle-view');
+            const newIconName = state.isDoneView ? 'clipboard-list' : 'archive';
+            button.innerHTML = `<i data-lucide="${newIconName}"></i>`;
+            lucide.createIcons({ nodes: [button] });
+            renderTodos();
+        });
+
+        $('#btn-manage-tags').addEventListener('click', () => {
+            renderTagsInModal();
+            openModal('modal-manage-tags');
+        });
+        
+        $('#modal-backdrop').addEventListener('click', closeModal);
+        $('#btn-cancel-todo').addEventListener('click', closeModal);
+        $('#btn-close-tags-modal').addEventListener('click', closeModal);
+        $('#btn-cancel-reminder').addEventListener('click', closeModal);
+
+        $('#btn-show-help').addEventListener('click', () => openModal('modal-help'));
+        $('#btn-close-help-modal').addEventListener('click', closeModal);
+        $('#btn-close-help-modal-icon').addEventListener('click', closeModal);
+
+        $('#btn-save-todo').addEventListener('click', handleSaveTodo);
+        $('#todo-tags-container').addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (button && !button.disabled) {
+                const id = button.dataset.id;
+                state.selectedTags.has(id) ? state.selectedTags.delete(id) : state.selectedTags.add(id);
+                renderTagsForTodo();
+            }
+        });
+        $('#todo-due-date').addEventListener('change', renderTagsForTodo);
+        
+        $('#btn-add-tag').addEventListener('click', handleAddTag);
+        $('#tags-list').addEventListener('click', (e) => {
+            const button = e.target.closest('.btn-delete-tag');
+            if (button) handleDeleteTag(button.closest('[data-id]').dataset.id);
+        });
+
+        $('#todo-list-container').addEventListener('click', e => {
+            const checkbox = e.target.closest('.todo-checkbox');
+            const editBtn = e.target.closest('.btn-edit-todo');
+            const deleteBtn = e.target.closest('.btn-delete-todo');
+            const header = e.target.closest('.tag-header');
+
+            if (checkbox) {
+                handleToggleTodoStatus(checkbox.closest('[data-id]').dataset.id, checkbox.checked);
+            } else if (editBtn) {
+                 const id = editBtn.closest('[data-id]').dataset.id;
+                 const todo = state.todos.find(t => t.id === id);
+                 if (todo) {
+                    state.editingTodoId = id;
+                    $('#modal-todo-title').textContent = 'TODOを編集';
+                    $('#todo-text').value = todo.text;
+                    $('#todo-priority').value = todo.priority || '1';
+                    $('#todo-due-date').value = todo.dueDate || '';
+                    $('#todo-retention').value = todo.retention;
+                    state.selectedTags = new Set(todo.tags);
+                    renderTagsForTodo();
+                    openModal('modal-add-todo');
+                 }
+            } else if (deleteBtn) {
+                 handleDeleteTodo(deleteBtn.closest('[data-id]').dataset.id);
+            } else if (header) {
+                // --- NEW: Accordion state saving ---
+                const tasksWrapper = header.nextElementSibling;
+                const icon = header.querySelector('.accordion-icon');
+                const tagName = header.dataset.tagName;
+                const isCurrentlyCollapsed = tasksWrapper.classList.contains('hidden');
+                
+                if (isCurrentlyCollapsed) {
+                    // It's about to be expanded
+                    state.userExpandedTags.add(tagName);
+                    state.userCollapsedTags.delete(tagName);
+                    tasksWrapper.classList.remove('hidden');
+                    icon.setAttribute('data-lucide', 'chevron-down');
+                } else {
+                    // It's about to be collapsed
+                    state.userCollapsedTags.add(tagName);
+                    state.userExpandedTags.delete(tagName);
+                    tasksWrapper.classList.add('hidden');
+                    icon.setAttribute('data-lucide', 'chevron-right');
+                }
+                lucide.createIcons({nodes: [icon]});
+                // --- END NEW ---
+            }
+        });
+        
+        // --- UPDATED with Debounce ---
+        $('#memo-textarea').addEventListener('input', (e) => {
+            debouncedSaveMemo(e.target.value);
+        });
+        $('#memo-page-select').addEventListener('change', e => {
+            state.activeMemoId = e.target.value;
+            renderMemo();
+        });
+        // --- メモ編集ボタンのリスナー (追加) ---
+        $('#btn-add-memo-page').addEventListener('click', handleOpenAddMemoModal);
+        $('#btn-edit-memo-page').addEventListener('click', handleOpenRenameMemoModal);
+        $('#btn-delete-memo-page').addEventListener('click', handleDeleteMemoPage);
+        $('#btn-save-add-memo-page').addEventListener('click', handleSaveNewMemoPage);
+        $('#btn-cancel-add-memo-page').addEventListener('click', closeModal);
+        $('#btn-save-rename-memo-page').addEventListener('click', handleSaveRenameMemoPage);
+        $('#btn-cancel-rename-memo-page').addEventListener('click', closeModal);
+        // --- ここまで追加 ---
+
+
+        $('#btn-save-reminder').addEventListener('click', handleSaveReminder);
+        $('#btn-delete-reminder').addEventListener('click', handleDeleteReminder);
+        
+        $('#setting-font-size').addEventListener('input', e => handleSettingsChange('fontSize', e.target.value + 'px'));
+        $('#setting-bg-color').addEventListener('input', e => handleSettingsChange('bgColor', e.target.value));
+        $('#setting-text-color').addEventListener('input', e => handleSettingsChange('textColor', e.target.value));
+        $('#btn-export').addEventListener('click', exportData);
+        $('#btn-import').addEventListener('click', importData);
+        $('#btn-reset-frequency').addEventListener('click', resetFrequency);
+
+        // --- UPDATED with Debounce ---
+        $('#todo-search').addEventListener('input', debouncedRenderTodos);
+        
+        // Generic modal listeners
+        $('#btn-info-ok').addEventListener('click', closeModal);
+        $('#btn-confirm-cancel').addEventListener('click', closeModal);
+        $('#btn-confirm-ok').addEventListener('click', () => {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeModal();
+            confirmCallback = null;
+        });
+    }
+    
+    // --- INITIALIZATION ---
+    async function init() {
+        lucide.createIcons();
+        try {
+            await initDB();
+            await loadData();
+            render();
+            setupEventListeners();
+        } catch(err) {
+            console.error("Initialization failed:", err);
+            // `loadData` already handles showing a modal, but this is a fallback.
+            document.body.innerHTML = `<div class="p-4 text-red-400">アプリの初期化に致命的なエラーが発生しました。ブラウザのデータベース機能が有効になっているか確認してください。</div>`;
+        }
+    }
+
+    // --- PWA Service Worker ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js') // Use relative path
+                .then(registration => console.log('ServiceWorker registration successful with scope: ', registration.scope))
+                .catch(err => console.log('ServiceWorker registration failed: ', err));
+        });
+    }
+
+    // --- STARTUP ---
+    window.addEventListener('DOMContentLoaded', init);
+
+})();
+</script>
+</body>
+</html>
+
