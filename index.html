@@ -46,7 +46,7 @@
             cursor: pointer;
         }
         /* Sort option highlight */
-        .sort-option-btn.active {
+        .sort-option-btn.active, .sort-option-btn-reminder.active {
             background-color: #3b82f6;
             color: white;
         }
@@ -308,11 +308,11 @@
                     <p class="text-sm">「TODO」画面の右下にある紫の<span class="inline-flex items-center justify-center bg-purple-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="archive" class="w-4 h-4"></i></span>ボタンを押すと、「完了済みタスク」の一覧に切り替わります。もう一度押すと「未完了タスク」の表示に戻ります。</p>
                 </div>
                  <div class="border-t border-gray-700 pt-3">
-                    <h3 class="font-semibold text-white">リマインダーの設定と並び替え (NEW)</h3>
+                    <h3 class="font-semibold text-white">リマインダーの設定と並び替え</h3>
                     <p class="text-sm">「リマインダー」タブを開き、設定したいタスクをタップすると、周期や開始日を設定できます。「自動で完了」をオンにすると、日付が変わると自動で終わるタスクを完了済みに移動できます。また、右上にある<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-down" class="w-4 h-4"></i></span>ボタンで、タスクの並び順も変更できます。</p>
                 </div>
                  <div class="border-t border-gray-700 pt-3">
-                    <h3 class="font-semibold text-white">タグの管理と並び替え (NEW)</h3>
+                    <h3 class="font-semibold text-white">タグの管理と並び替え</h3>
                     <p class="text-sm">「TODO」画面の右下にあるグレーの<span class="inline-flex items-center justify-center bg-gray-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="tags" class="w-4 h-4"></i></span>ボタンを押すと、「タグ管理」画面が開きます。各タグの横に表示される<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i></span><span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i></span>ボタンで、TODOリストに表示されるタググループの順序を変更できます。</p>
                 </div>
                 <div class="border-t border-gray-700 pt-3">
@@ -418,7 +418,7 @@
 
 <script>
 // =================================================================================
-// PWA TODO App - Main JavaScript Logic (v2.5)
+// PWA TODO App - Main JavaScript Logic (v2.6)
 // =================================================================================
 (function() {
     'use strict';
@@ -433,19 +433,20 @@
         todos: [],
         tags: [],
         memos: [],
-        activeMemoId: null,
+        activeMemoId: null, // activeMemoId will be loaded from settings
         settings: {
             fontSize: '16px',
             bgColor: '#1a202c',
             textColor: '#ffffff',
-            todoSortBy: 'priority', // NEW: todo sort setting
-            reminderSortBy: 'priority', // NEW: reminder sort setting
+            todoSortBy: 'priority',
+            reminderSortBy: 'priority',
+            activeMemoId: null, // NEW: Store last active memo ID
         },
         editingTodoId: null,
         editingReminderTodoId: null,
         selectedTags: new Set(),
-        userExpandedTags: new Set(), // ユーザーが明示的に開いたタグ
-        userCollapsedTags: new Set(), // ユーザーが明示的に閉じたタグ
+        userExpandedTags: new Set(),
+        userCollapsedTags: new Set(),
     };
 
     // --- DATABASE (IndexedDB) ---
@@ -540,13 +541,11 @@
         $('#modal-backdrop').classList.add('active');
         $(`#${modalId}`).classList.add('active');
 
-        // NEW: Highlight active sort option
         if (modalId === 'modal-sort-todo') {
             $$('#sort-options-container .sort-option-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.sort === state.settings.todoSortBy);
             });
         }
-        // NEW: Highlight active reminder sort option
         if (modalId === 'modal-sort-reminders') {
             $$('#sort-options-container-reminders .sort-option-btn-reminder').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.sort === state.settings.reminderSortBy);
@@ -603,7 +602,6 @@
             todo.text.toLowerCase().includes(searchTerm)
         );
 
-        // --- NEW: Apply Sorting ---
         const sortKey = state.settings.todoSortBy;
         filteredTodos.sort((a, b) => {
             switch (sortKey) {
@@ -618,10 +616,8 @@
                     return (b.priority || 1) - (a.priority || 1) || b.createdAt - a.createdAt;
             }
         });
-        // --- END NEW ---
 
         if (state.isDoneView) {
-            // This sort is applied *after* the main sort
             filteredTodos.sort((a, b) => (b.moveCount || 0) - (a.moveCount || 0));
         }
 
@@ -646,19 +642,16 @@
             return;
         }
         
-        // --- NEW: Render tags in user-defined order ---
-        // 1. Get all tag names present in the current view
         const presentTagNames = new Set(Object.keys(todosByTag));
         const hasUntagged = presentTagNames.has('タグなし');
         presentTagNames.delete('タグなし');
 
-        // 2. Get sorted list of tag objects that are present
-        const sortedPresentTags = state.tags // state.tags is already sorted by order
+        const sortedPresentTags = state.tags
             .filter(tag => presentTagNames.has(tag.name));
 
         const renderTagGroup = (tagName) => {
             const tag = state.tags.find(t => t.name === tagName);
-            const tagColor = tag ? tag.color : '#718096'; // Default color for 'タグなし'
+            const tagColor = tag ? tag.color : '#718096';
             
             const groupContainer = document.createElement('div');
             groupContainer.className = 'mb-4 rounded-lg overflow-hidden border-2';
@@ -670,7 +663,7 @@
             } else if (state.userCollapsedTags.has(tagName)) {
                 isCollapsed = true;
             } else {
-                isCollapsed = state.isDoneView; // Default
+                isCollapsed = state.isDoneView;
             }
 
             const header = document.createElement('h3');
@@ -716,16 +709,13 @@
             container.appendChild(groupContainer);
         };
 
-        // 3. Render sorted tag groups
         sortedPresentTags.forEach(tag => {
             renderTagGroup(tag.name);
         });
 
-        // 4. Render 'タグなし' group last
         if (hasUntagged) {
             renderTagGroup('タグなし');
         }
-        // --- END NEW ---
 
         lucide.createIcons();
     }
@@ -733,6 +723,21 @@
     function renderMemo() {
         const select = $('#memo-page-select');
         select.innerHTML = '';
+        
+        // --- NEW: Handle memo state memory ---
+        if (state.memos.length === 0) {
+            $('#memo-textarea').value = '';
+            return;
+        }
+
+        let activeIdExists = state.memos.some(m => m.id === state.settings.activeMemoId);
+        state.activeMemoId = activeIdExists ? state.settings.activeMemoId : state.memos[0].id;
+        
+        if (!activeIdExists) {
+            (async () => await handleSettingsChange('activeMemoId', state.activeMemoId))();
+        }
+        // --- END NEW ---
+
         state.memos.forEach(memo => {
             const option = document.createElement('option');
             option.value = memo.id;
@@ -749,12 +754,11 @@
     
     function renderReminders() {
         const container = $('#reminders-list-container');
-        const searchTerm = $('#reminder-search').value.toLowerCase(); // 検索機能
+        const searchTerm = $('#reminder-search').value.toLowerCase();
         container.innerHTML = '';
 
-        let todosToRender = state.todos.filter(todo => todo.text.toLowerCase().includes(searchTerm)); // 検索
+        let todosToRender = state.todos.filter(todo => todo.text.toLowerCase().includes(searchTerm));
         
-        // --- NEW: Apply Sorting for Reminders ---
         const sortKey = state.settings.reminderSortBy;
         todosToRender.sort((a, b) => {
             switch (sortKey) {
@@ -769,14 +773,13 @@
                     return (b.priority || 1) - (a.priority || 1) || b.createdAt - a.createdAt;
             }
         });
-        // --- END NEW ---
 
-        if(todosToRender.length === 0) { // 修正
-             container.innerHTML = `<div class="text-center text-gray-500 mt-8">${searchTerm ? '検索結果はありません。' : '設定可能なタスクはありません。'}</div>`; // 修正
+        if(todosToRender.length === 0) {
+             container.innerHTML = `<div class="text-center text-gray-500 mt-8">${searchTerm ? '検索結果はありません。' : '設定可能なタスクはありません。'}</div>`;
             return;
         }
 
-        todosToRender.forEach(todo => { // 修正
+        todosToRender.forEach(todo => {
             const hasReminder = todo.reminder && todo.reminder.period !== 'none';
             const reminderText = hasReminder ? `周期: ${todo.reminder.period}, 開始日: ${todo.reminder.startDate}` : 'リマインダー未設定';
             const item = document.createElement('div');
@@ -802,7 +805,6 @@
     }
 
     function renderTagsInModal() {
-        // state.tags should already be sorted by `order`
         const container = $('#tags-list');
         container.innerHTML = '';
         const tagCount = state.tags.length;
@@ -810,14 +812,12 @@
         state.tags.forEach((tag, index) => {
             const isDeadlineTag = tag.name === DEADLINE_TAG_NAME;
             
-            // --- UPDATED: Allow moving deadline tag ---
             const isFirst = index === 0;
             const isLast = index === tagCount - 1;
 
             const deleteBtnHTML = isDeadlineTag 
                 ? `<span class="text-gray-500" title="このタグは削除できません"><i data-lucide="lock" class="w-4 h-4"></i></span>`
                 : `<button class="btn-delete-tag text-gray-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
-            // --- END UPDATED ---
 
             container.innerHTML += `
                 <div class="flex items-center justify-between bg-gray-700 p-2 rounded-lg" data-id="${tag.id}">
@@ -826,7 +826,6 @@
                         <span class="${isDeadlineTag ? 'text-red-400 font-bold' : ''} truncate">${tag.name}</span>
                     </div>
                     <div class="flex items-center space-x-2 flex-shrink-0">
-                        <!-- UPDATED: Allow moving deadline tag -->
                         <div class="flex">
                             <button class="btn-tag-move-up text-gray-400 hover:text-white ${isFirst ? 'opacity-30 cursor-not-allowed' : ''}" ${isFirst ? 'disabled' : ''}><i data-lucide="arrow-up-circle" class="w-5 h-5"></i></button>
                             <button class="btn-tag-move-down text-gray-400 hover:text-white ${isLast ? 'opacity-30 cursor-not-allowed' : ''}" ${isLast ? 'disabled' : ''}><i data-lucide="arrow-down-circle" class="w-5 h-5"></i></button>
@@ -842,7 +841,6 @@
     function renderTagsForTodo() {
         const container = $('#todo-tags-container');
         container.innerHTML = '';
-        // Render tags in their defined order
         state.tags.forEach(tag => {
             const isSelected = state.selectedTags.has(tag.id);
             const isDeadlineTag = tag.name === DEADLINE_TAG_NAME;
@@ -871,7 +869,6 @@
                 dbGetAll('memos')
             ]);
 
-            // データ健全性チェック
             const validTodos = [];
             const invalidTodoIds = [];
             todosFromDb.forEach(item => {
@@ -891,16 +888,14 @@
             
             state.todos = validTodos;
             
-            // --- NEW: Tag order initialization ---
             let maxOrder = 0;
             let tagsNeedSave = false;
             tags.forEach((tag, index) => {
                 if (tag.order === undefined || tag.order === null) {
-                    // --- UPDATED: Default deadline tag to top ---
                     if (tag.name === DEADLINE_TAG_NAME) {
-                        tag.order = -1; // Give it highest priority
+                        tag.order = -1;
                     } else {
-                        tag.order = index; // Assign order to existing tags
+                        tag.order = index;
                     }
                     tagsNeedSave = true;
                 }
@@ -917,22 +912,20 @@
                 })();
             }
             state.tags = tags.sort((a, b) => (a.order || 0) - (b.order || 0));
-            // --- END NEW ---
 
             state.memos = memos;
 
             if (state.memos.length === 0) {
-                // 初期メモ名を変更
                 const firstMemo = { id: crypto.randomUUID(), name: 'メモ①', content: '' };
                 state.memos.push(firstMemo);
                 await dbPut('memos', firstMemo);
             }
-            state.activeMemoId = state.memos[0].id;
             
-            // --- UPDATED: Check for non-deadline tags ---
+            // --- activeMemoId loading logic is now here ---
+            
             if(state.tags.filter(t => t.name !== DEADLINE_TAG_NAME).length === 0) {
                  const defaultTags = [
-                    { id: crypto.randomUUID(), name: '買い物', color: '#3498db', order: 1 }, // Start order from 1
+                    { id: crypto.randomUUID(), name: '買い物', color: '#3498db', order: 1 },
                     { id: crypto.randomUUID(), name: '作業', color: '#2ecc71', order: 2 },
                     { id: crypto.randomUUID(), name: '手続き', color: '#f1c40f', order: 3 },
                     { id: crypto.randomUUID(), name: '連絡', color: '#9b59b6', order: 4 },
@@ -945,7 +938,6 @@
             }
             
             if (!state.tags.some(t => t.name === DEADLINE_TAG_NAME)) {
-                // --- UPDATED: Default deadline tag to top ---
                 const newDeadlineTag = { id: crypto.randomUUID(), name: DEADLINE_TAG_NAME, color: '#ef4444', order: -1 };
                 await dbPut('tags', newDeadlineTag);
                 state.tags.push(newDeadlineTag);
@@ -956,12 +948,18 @@
                 state.settings[setting.key] = setting.value;
             });
 
-            // NEW: Load sort setting (set default if not found)
             state.settings.todoSortBy = settings.find(s => s.key === 'todoSortBy')?.value || 'priority';
-            // NEW: Load reminder sort setting
             state.settings.reminderSortBy = settings.find(s => s.key === 'reminderSortBy')?.value || 'priority';
+            
+            // --- NEW: Load active memo ID ---
+            state.settings.activeMemoId = settings.find(s => s.key === 'activeMemoId')?.value || null;
+            let activeIdExists = state.memos.some(m => m.id === state.settings.activeMemoId);
+            state.activeMemoId = activeIdExists ? state.settings.activeMemoId : (state.memos[0]?.id || null);
+            if (!activeIdExists && state.activeMemoId) {
+                await handleSettingsChange('activeMemoId', state.activeMemoId);
+            }
+            // --- END NEW ---
 
-            // アコーディオン状態の読み込み
             const expandedTagsSetting = settings.find(s => s.key === 'userExpandedTags');
             const collapsedTagsSetting = settings.find(s => s.key === 'userCollapsedTags');
             if (expandedTagsSetting) {
@@ -1072,7 +1070,7 @@
         
         try {
             if (isChecked && todo.retention === 'delete') {
-                await handleDeleteTodo(id); // handleDeleteTodo already has confirmation
+                await handleDeleteTodo(id);
                 return;
             }
 
@@ -1084,12 +1082,10 @@
                 todo.lastCompletedAt = todo.completedAt;
             }
             await dbPut('todos', todo);
-            // We re-render slightly delayed to let the check animation finish
             setTimeout(renderTodos, 200);
         } catch (err) {
             console.error('Failed to toggle todo status:', err);
             showInfoModal(`タスクの状態変更に失敗しました。\nエラー: ${err.message}`, 'エラー');
-            // Revert checkbox state on error
             const checkbox = $(`[data-id="${id}"] .todo-checkbox`);
             if(checkbox) checkbox.checked = !isChecked;
         }
@@ -1106,8 +1102,7 @@
             } catch (err) {
                 console.error('Failed to delete todo:', err);
                 showInfoModal(`タスクの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
-                // Re-add todo to state if deletion failed (though it might be out of sync)
-                state.todos.push(todo); // Consider better error recovery
+                state.todos.push(todo);
             }
         });
     }
@@ -1134,7 +1129,6 @@
         }
 
         try {
-            // NEW: Assign order
             const maxOrder = Math.max(0, ...state.tags
                 .filter(t => t.order !== undefined && t.order !== null)
                 .map(t => t.order));
@@ -1146,14 +1140,14 @@
                 order: maxOrder + 1
             };
             state.tags.push(newTag);
-            state.tags.sort((a, b) => (a.order || 0) - (b.order || 0)); // Re-sort
+            state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
             await dbPut('tags', newTag);
             $('#new-tag-name').value = '';
             renderTagsInModal();
         } catch (err) {
             console.error('Failed to add tag:', err);
             showInfoModal(`タグの追加に失敗しました。\nエラー: ${err.message}`, 'エラー');
-            state.tags = state.tags.filter(t => t.name !== name); // Revert state
+            state.tags = state.tags.filter(t => t.name !== name);
         }
     }
     
@@ -1183,30 +1177,25 @@
             } catch (err) {
                 console.error('Failed to delete tag:', err);
                 showInfoModal(`タグの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
-                state.tags.push(tagToDelete); // Revert state
-                state.tags.sort((a, b) => (a.order || 0) - (b.order || 0)); // Re-sort
+                state.tags.push(tagToDelete);
+                state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
         });
     }
 
-    // --- NEW: Tag sorting function ---
     async function handleMoveTag(id, direction) {
         const index = state.tags.findIndex(t => t.id === id);
         if (index === -1) return;
 
         const newIndex = index + direction;
 
-        // Check bounds
         if (newIndex < 0 || newIndex >= state.tags.length) return;
         
         const tagA = state.tags[index];
         const tagB = state.tags[newIndex];
         
-        if (!tagA || !tagB) {
-             return; // Safety check
-        }
+        if (!tagA || !tagB) return;
 
-        // Swap order property
         const tempOrder = tagA.order;
         tagA.order = tagB.order;
         tagB.order = tempOrder;
@@ -1221,38 +1210,35 @@
         } catch (err) {
             console.error('Failed to move tag:', err);
             showInfoModal('タグの移動に失敗しました。');
-            // Revert
             tagB.order = tagA.order;
             tagA.order = tempOrder;
             state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
         }
     }
     
-    // --- NEW: Todo sorting function ---
     async function handleSetTodoSort(sortKey) {
         state.settings.todoSortBy = sortKey;
         try {
-            await dbPut('settings', { key: 'todoSortBy', value: sortKey });
+            await handleSettingsChange('todoSortBy', sortKey); // Use settings change function
             closeModal();
             renderTodos();
         } catch (err) {
              console.error('Failed to save sort setting:', err);
              showInfoModal('並び替え設定の保存に失敗しました。');
-             state.settings.todoSortBy = 'priority'; // Revert
+             state.settings.todoSortBy = 'priority';
         }
     }
     
-    // --- NEW: Reminder sorting function ---
     async function handleSetReminderSort(sortKey) {
         state.settings.reminderSortBy = sortKey;
         try {
-            await dbPut('settings', { key: 'reminderSortBy', value: sortKey });
+            await handleSettingsChange('reminderSortBy', sortKey); // Use settings change function
             closeModal();
             renderReminders();
         } catch (err) {
              console.error('Failed to save reminder sort setting:', err);
              showInfoModal('並び替え設定の保存に失敗しました。');
-             state.settings.reminderSortBy = 'priority'; // Revert
+             state.settings.reminderSortBy = 'priority';
         }
     }
 
@@ -1289,7 +1275,7 @@
         } catch (err) {
             console.error('Failed to delete reminder:', err);
             showInfoModal(`リマインダーの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
-            todo.reminder = oldReminder; // Revert state
+            todo.reminder = oldReminder;
         }
     }
     
@@ -1327,12 +1313,17 @@
         try {
             state.settings[key] = value;
             await dbPut('settings', { key: key, value: value });
-            applySettings();
+            // Only apply visual settings immediately
+            if (key === 'fontSize' || key === 'bgColor' || key === 'textColor') {
+                applySettings();
+            }
         } catch (err) {
             console.error('Failed to save settings:', err);
             showInfoModal(`設定の保存に失敗しました。\nエラー: ${err.message}`, '保存エラー');
-            state.settings = oldSettings; // Revert state
-            applySettings();
+            state.settings = oldSettings;
+            if (key === 'fontSize' || key === 'bgColor' || key === 'textColor') {
+                applySettings();
+            }
         }
     }
     
@@ -1387,7 +1378,7 @@
                             } catch (err) {
                                 console.error('Import failed during DB write:', err);
                                 showInfoModal(`データのインポート処理中にエラーが発生しました。\nエラー: ${err.message}`, 'インポートエラー');
-                                await loadData(); // Try to reload old data
+                                await loadData();
                                 render();
                             }
                         });
@@ -1418,7 +1409,6 @@
     }
     
     function handleOpenAddMemoModal() {
-        // 新しいメモのデフォルト名を変更
         $('#new-memo-page-name').value = `メモ${state.memos.length + 1}`;
         $('#new-memo-page-name').classList.remove('border-red-500');
         openModal('modal-add-memo-page');
@@ -1432,18 +1422,18 @@
                 state.memos.push(newMemo);
                 state.activeMemoId = newMemo.id;
                 await dbPut('memos', newMemo);
+                await handleSettingsChange('activeMemoId', newMemo.id); // Save active ID
                 closeModal();
                 renderMemo();
             } catch (err) {
                 console.error('Failed to save new memo page:', err);
                 showInfoModal(`メモページの作成に失敗しました。\nエラー: ${err.message}`, '保存エラー');
-                state.memos = state.memos.filter(m => m.id !== state.activeMemoId); // Revert
+                state.memos = state.memos.filter(m => m.id !== state.activeMemoId);
                 state.activeMemoId = state.memos[0]?.id || null;
             }
         }
     }
 
-    // --- メモ名変更のための関数 (追加) ---
     function handleOpenRenameMemoModal() {
         const activeMemo = state.memos.find(m => m.id === state.activeMemoId);
         if (activeMemo) {
@@ -1467,14 +1457,13 @@
                 activeMemo.name = newName;
                 await dbPut('memos', activeMemo);
                 closeModal();
-                renderMemo(); // 選択肢の表示を更新
+                renderMemo();
             } catch (err) {
                 console.error('Failed to rename memo page:', err);
                 showInfoModal(`名称の変更に失敗しました。\nエラー: ${err.message}`, '保存エラー');
             }
         }
     }
-    // --- ここまで追加 ---
 
     async function handleDeleteMemoPage() {
         if (state.memos.length <= 1) {
@@ -1486,21 +1475,28 @@
         showConfirmModal(`「${memoName}」を削除しますか？`, async () => {
             try {
                 const deletedId = state.activeMemoId;
-                const deletedMemo = state.mSemos.find(m => m.id === deletedId);
+                const deletedMemo = state.memos.find(m => m.id === deletedId);
                 state.memos = state.memos.filter(m => m.id !== deletedId);
                 state.activeMemoId = state.memos[0]?.id || null;
                 await dbDelete('memos', deletedId);
+                await handleSettingsChange('activeMemoId', state.activeMemoId); // Save new active ID
                 renderMemo();
             } catch (err) {
                  console.error('Failed to delete memo page:', err);
                 showInfoModal(`メモページの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
-                state.memos.push(deletedMemo); // Revert
+                state.memos.push(deletedMemo);
                 state.activeMemoId = deletedMemo.id;
             }
         });
     }
     
-    // Debounced memo save function
+    // --- NEW: Function to handle memo page change and save state ---
+    async function handleMemoPageChange(e) {
+        state.activeMemoId = e.target.value;
+        await handleSettingsChange('activeMemoId', state.activeMemoId);
+        renderMemo();
+    }
+
     const debouncedSaveMemo = debounce(async (content) => {
         const activeMemo = state.memos.find(m => m.id === state.activeMemoId);
         if (activeMemo) {
@@ -1512,25 +1508,20 @@
                 showInfoModal(`メモの自動保存に失敗しました。\nエラー: ${err.message}`, '保存エラー');
             }
         }
-    }, 500); // 500ms delay
+    }, 500);
 
-    // Debounced search/render function
-    const debouncedRenderTodos = debounce(renderTodos, 300); // 300ms delay
+    const debouncedRenderTodos = debounce(renderTodos, 300);
+    const debouncedRenderReminders = debounce(renderReminders, 300);
 
-    // リマインダー検索用 (追加)
-    const debouncedRenderReminders = debounce(renderReminders, 300); // 300ms delay
-
-    // アコーディオン状態保存用 (追加)
     async function saveAccordionState() {
         try {
             await dbPut('settings', { key: 'userExpandedTags', value: Array.from(state.userExpandedTags) });
             await dbPut('settings', { key: 'userCollapsedTags', value: Array.from(state.userCollapsedTags) });
         } catch (err) {
             console.error('Failed to save accordion state:', err);
-            // ユーザーに通知するほど重大ではない
         }
     }
-    const debouncedSaveAccordionState = debounce(saveAccordionState, 1000); // 1秒ディレイ
+    const debouncedSaveAccordionState = debounce(saveAccordionState, 1000);
 
     // --- EVENT LISTENERS ---
     function setupEventListeners() {
@@ -1585,7 +1576,6 @@
         
         $('#btn-add-tag').addEventListener('click', handleAddTag);
         
-        // --- UPDATED: Tag list listener for move buttons ---
         $('#tags-list').addEventListener('click', (e) => {
             const row = e.target.closest('[data-id]');
             if (!row) return;
@@ -1625,7 +1615,6 @@
             } else if (deleteBtn) {
                  handleDeleteTodo(deleteBtn.closest('[data-id]').dataset.id);
             } else if (header) {
-                // --- Accordion state saving ---
                 const tasksWrapper = header.nextElementSibling;
                 const icon = header.querySelector('.accordion-icon');
                 const tagName = header.dataset.tagName;
@@ -1643,19 +1632,16 @@
                     icon.setAttribute('data-lucide', 'chevron-right');
                 }
                 lucide.createIcons({nodes: [icon]});
-                debouncedSaveAccordionState(); // 状態を保存
+                debouncedSaveAccordionState();
             }
         });
         
-        // --- UPDATED with Debounce ---
         $('#memo-textarea').addEventListener('input', (e) => {
             debouncedSaveMemo(e.target.value);
         });
-        $('#memo-page-select').addEventListener('change', e => {
-            state.activeMemoId = e.target.value;
-            renderMemo();
-        });
-        // --- メモ編集ボタンのリスナー (追加) ---
+        // --- UPDATED: Use new handler ---
+        $('#memo-page-select').addEventListener('change', handleMemoPageChange);
+        
         $('#btn-add-memo-page').addEventListener('click', handleOpenAddMemoModal);
         $('#btn-edit-memo-page').addEventListener('click', handleOpenRenameMemoModal);
         $('#btn-delete-memo-page').addEventListener('click', handleDeleteMemoPage);
@@ -1674,11 +1660,9 @@
         $('#btn-import').addEventListener('click', importData);
         $('#btn-reset-frequency').addEventListener('click', resetFrequency);
 
-        // --- UPDATED with Debounce ---
         $('#todo-search').addEventListener('input', debouncedRenderTodos);
-        $('#reminder-search').addEventListener('input', debouncedRenderReminders); // リマインダー検索 (追加)
+        $('#reminder-search').addEventListener('input', debouncedRenderReminders);
         
-        // --- NEW: Sort modal listeners ---
         $('#btn-sort-todo').addEventListener('click', () => openModal('modal-sort-todo'));
         $('#btn-close-sort-todo-modal').addEventListener('click', closeModal);
         $('#sort-options-container').addEventListener('click', (e) => {
@@ -1688,7 +1672,6 @@
             }
         });
 
-        // --- NEW: Reminder Sort modal listeners ---
         $('#btn-sort-reminders').addEventListener('click', () => openModal('modal-sort-reminders'));
         $('#btn-close-sort-reminders-modal').addEventListener('click', closeModal);
         $('#sort-options-container-reminders').addEventListener('click', (e) => {
@@ -1716,11 +1699,10 @@
         try {
             await initDB();
             await loadData();
-            render();
+            render(); // render() will now call renderMemo() which correctly sets the active memo
             setupEventListeners();
         } catch(err) {
             console.error("Initialization failed:", err);
-            // `loadData` already handles showing a modal, but this is a fallback.
             document.body.innerHTML = `<div class="p-4 text-red-400">アプリの初期化に致命的なエラーが発生しました。ブラウザのデータベース機能が有効になっているか確認してください。</div>`;
         }
     }
@@ -1728,7 +1710,7 @@
     // --- PWA Service Worker ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./service-worker.js') // Use relative path
+            navigator.serviceWorker.register('./service-worker.js')
                 .then(registration => console.log('ServiceWorker registration successful with scope: ', registration.scope))
                 .catch(err => console.log('ServiceWorker registration failed: ', err));
         });
