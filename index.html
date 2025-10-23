@@ -45,6 +45,11 @@
         .tag-header {
             cursor: pointer;
         }
+        /* Sort option highlight */
+        .sort-option-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white antialiased">
@@ -56,8 +61,14 @@
             <div id="tab-todo" class="tab-content p-4">
                 <div class="flex justify-between items-center mb-4">
                     <h1 id="todo-list-title" class="text-2xl font-bold">未完了タスク</h1>
-                    <div class="relative">
-                        <input type="search" id="todo-search" placeholder="タスクを検索..." class="bg-gray-700 border border-gray-600 rounded-full py-2 px-4 w-40 sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <!-- 並び替えボタンと検索バー -->
+                    <div class="flex items-center space-x-2">
+                        <button id="btn-sort-todo" class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-700">
+                            <i data-lucide="arrow-up-down" class="w-5 h-5"></i>
+                        </button>
+                        <div class="relative">
+                            <input type="search" id="todo-search" placeholder="タスクを検索..." class="bg-gray-700 border border-gray-600 rounded-full py-2 px-4 w-36 sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
                     </div>
                 </div>
                 <div id="todo-list-container">
@@ -82,7 +93,13 @@
 
             <!-- Reminders Tab -->
             <div id="tab-reminders" class="tab-content p-4 hidden">
-                <h1 class="text-2xl font-bold mb-4">リマインダー設定</h1>
+                <!-- リマインダー検索バーを追加 -->
+                <div class="flex justify-between items-center mb-4">
+                    <h1 class="text-2xl font-bold">リマインダー設定</h1>
+                    <div class="relative">
+                        <input type="search" id="reminder-search" placeholder="タスクを検索..." class="bg-gray-700 border border-gray-600 rounded-full py-2 px-4 w-40 sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
                 <div id="reminders-list-container">
                     <!-- Reminders list will be rendered here -->
                 </div>
@@ -127,8 +144,8 @@
             </div>
         </main>
 
-        <!-- Floating Action Buttons -->
-        <div id="fab-container" class="fixed bottom-20 right-5 z-20 space-y-3 flex flex-col items-center">
+        <!-- Floating Action Buttons (配置変更) -->
+        <div id="fab-container" class="fixed bottom-20 left-0 right-0 z-20 flex justify-center items-center space-x-3">
             <button id="btn-add-todo" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 fab-button">
                 <i data-lucide="plus"></i>
             </button>
@@ -212,6 +229,7 @@
                 <input type="color" id="new-tag-color" value="#3b82f6" class="w-12 h-10 p-1 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
                 <button id="btn-add-tag" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-lg"><i data-lucide="plus"></i></button>
             </div>
+            <!-- タグ並び替え機能 -->
             <div id="tags-list" class="space-y-2 max-h-60 overflow-y-auto">
                 <!-- Tag list will be rendered here -->
             </div>
@@ -273,6 +291,10 @@
                     <p class="text-sm">「TODO」画面の右下にある青い<span class="inline-flex items-center justify-center bg-blue-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="plus" class="w-4 h-4"></i></span>ボタンを押すと、新しいタスクの入力画面が開きます。</p>
                 </div>
                 <div class="border-t border-gray-700 pt-3">
+                    <h3 class="font-semibold text-white">タスクの並び替え（NEW）</h3>
+                    <p class="text-sm">「TODO」画面の右上にある<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-down" class="w-4 h-4"></i></span>ボタンを押すと、「優先度順」「期限日順」などでタスクの表示順を変更できます。</p>
+                </div>
+                <div class="border-t border-gray-700 pt-3">
                     <h3 class="font-semibold text-white">タスクの完了と未完了への復帰</h3>
                     <p class="text-sm">「TODO」画面で、各タスクの左側にあるチェックボックスにチェックを入れると、そのタスクは「完了済み」になります。逆に、「完了済みタスク」の一覧でチェックを外すと、タスクは「未完了」に戻ります。</p>
                 </div>
@@ -285,8 +307,8 @@
                     <p class="text-sm">「リマインダー」タブを開き、設定したいタスクをタップすると、周期や開始日を設定できます。「自動で完了」をオンにすると、毎週の特売日のような、日付が変わると自動で終わるタスクを完了済みに移動させることができます。</p>
                 </div>
                  <div class="border-t border-gray-700 pt-3">
-                    <h3 class="font-semibold text-white">タグの管理</h3>
-                    <p class="text-sm">「TODO」画面の右下にあるグレーの<span class="inline-flex items-center justify-center bg-gray-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="tags" class="w-4 h-4"></i></span>ボタンを押すと、「タグ管理」画面が開き、新しいタグの作成や削除ができます。</p>
+                    <h3 class="font-semibold text-white">タグの管理と並び替え（NEW）</h3>
+                    <p class="text-sm">「TODO」画面の右下にあるグレーの<span class="inline-flex items-center justify-center bg-gray-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="tags" class="w-4 h-4"></i></span>ボタンを押すと、「タグ管理」画面が開きます。各タグの横に表示される<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i></span><span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i></span>ボタンで、TODOリストに表示されるタググループの順序を変更できます。</p>
                 </div>
                 <div class="border-t border-gray-700 pt-3">
                     <h3 class="font-semibold text-white">タスクの編集と削除</h3>
@@ -333,6 +355,22 @@
         </div>
     </div>
 
+    <!-- TODO Sort Modal (NEW) -->
+    <div id="modal-sort-todo" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 class="text-xl font-bold">タスクの並び替え</h2>
+            <div id="sort-options-container" class="flex flex-col space-y-2">
+                <button data-sort="priority" class="sort-option-btn text-left p-3 rounded-lg hover:bg-gray-700">優先度順</button>
+                <button data-sort="dueDate" class="sort-option-btn text-left p-3 rounded-lg hover:bg-gray-700">期限日順</button>
+                <button data-sort="createdAt" class="sort-option-btn text-left p-3 rounded-lg hover:bg-gray-700">作成日順</button>
+                <button data-sort="name" class="sort-option-btn text-left p-3 rounded-lg hover:bg-gray-700">名前順</button>
+            </div>
+            <div class="flex justify-end">
+                <button id="btn-close-sort-todo-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">閉じる</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Generic Confirmation Modal -->
     <div id="modal-confirm" class="modal fixed inset-0 z-50 items-center justify-center p-4">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
@@ -359,7 +397,7 @@
 
 <script>
 // =================================================================================
-// PWA TODO App - Main JavaScript Logic (v2.1)
+// PWA TODO App - Main JavaScript Logic (v2.4)
 // =================================================================================
 (function() {
     'use strict';
@@ -379,6 +417,7 @@
             fontSize: '16px',
             bgColor: '#1a202c',
             textColor: '#ffffff',
+            todoSortBy: 'priority', // NEW: todo sort setting
         },
         editingTodoId: null,
         editingReminderTodoId: null,
@@ -478,6 +517,13 @@
     function openModal(modalId) {
         $('#modal-backdrop').classList.add('active');
         $(`#${modalId}`).classList.add('active');
+
+        // NEW: Highlight active sort option
+        if (modalId === 'modal-sort-todo') {
+            $$('.sort-option-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sort === state.settings.todoSortBy);
+            });
+        }
     }
 
     function closeModal() {
@@ -524,14 +570,31 @@
         const searchTerm = $('#todo-search').value.toLowerCase();
         
         container.innerHTML = '';
-        const filteredTodos = state.todos.filter(todo => 
+        let filteredTodos = state.todos.filter(todo => 
             todo.isDone === state.isDoneView &&
             todo.text.toLowerCase().includes(searchTerm)
         );
 
-        filteredTodos.sort((a,b) => (b.priority || 1) - (a.priority || 1) || b.createdAt - a.createdAt);
+        // --- NEW: Apply Sorting ---
+        const sortKey = state.settings.todoSortBy;
+        filteredTodos.sort((a, b) => {
+            switch (sortKey) {
+                case 'dueDate':
+                    // Null/empty dates go to the end
+                    return (a.dueDate || '9999-12-31').localeCompare(b.dueDate || '9999-12-31') || (b.priority || 1) - (a.priority || 1);
+                case 'createdAt':
+                    return b.createdAt - a.createdAt;
+                case 'name':
+                    return a.text.localeCompare(b.text);
+                case 'priority':
+                default:
+                    return (b.priority || 1) - (a.priority || 1) || b.createdAt - a.createdAt;
+            }
+        });
+        // --- END NEW ---
 
         if (state.isDoneView) {
+            // This sort is applied *after* the main sort
             filteredTodos.sort((a, b) => (b.moveCount || 0) - (a.moveCount || 0));
         }
 
@@ -555,32 +618,40 @@
             container.innerHTML = `<div class="text-center text-gray-500 mt-8">タスクはありません。</div>`;
             return;
         }
+        
+        // --- NEW: Render tags in user-defined order ---
+        // 1. Get all tag names present in the current view
+        const presentTagNames = new Set(Object.keys(todosByTag));
+        const hasUntagged = presentTagNames.has('タグなし');
+        presentTagNames.delete('タグなし');
 
-        Object.keys(todosByTag).sort().forEach(tagName => {
+        // 2. Get sorted list of tag objects that are present
+        const sortedPresentTags = state.tags // state.tags is already sorted by order
+            .filter(tag => presentTagNames.has(tag.name));
+
+        const renderTagGroup = (tagName) => {
             const tag = state.tags.find(t => t.name === tagName);
-            const tagColor = tag ? tag.color : '#718096';
+            const tagColor = tag ? tag.color : '#718096'; // Default color for 'タグなし'
             
             const groupContainer = document.createElement('div');
             groupContainer.className = 'mb-4 rounded-lg overflow-hidden border-2';
             groupContainer.style.borderColor = tagColor;
             
-            // --- NEW: Accordion state logic ---
             let isCollapsed;
             if (state.userExpandedTags.has(tagName)) {
                 isCollapsed = false;
             } else if (state.userCollapsedTags.has(tagName)) {
                 isCollapsed = true;
             } else {
-                isCollapsed = state.isDoneView; // Default: Done is collapsed, Todo is open
+                isCollapsed = state.isDoneView; // Default
             }
-            // --- END NEW ---
 
             const header = document.createElement('h3');
             header.className = 'tag-header text-md font-bold p-2 text-white flex justify-between items-center';
             header.style.backgroundColor = tagColor;
             header.dataset.tagName = tagName;
             
-            const iconName = isCollapsed ? 'chevron-right' : 'chevron-down'; // Updated
+            const iconName = isCollapsed ? 'chevron-right' : 'chevron-down';
             header.innerHTML = `
                 <span>${tagName}</span>
                 <i data-lucide="${iconName}" class="accordion-icon"></i>
@@ -589,7 +660,7 @@
             
             const tasksWrapper = document.createElement('div');
             tasksWrapper.className = 'tasks-wrapper p-2 space-y-2 bg-gray-800/30';
-            if (isCollapsed) { // Updated
+            if (isCollapsed) {
                 tasksWrapper.classList.add('hidden');
             }
 
@@ -616,7 +687,18 @@
             });
             groupContainer.appendChild(tasksWrapper);
             container.appendChild(groupContainer);
+        };
+
+        // 3. Render sorted tag groups
+        sortedPresentTags.forEach(tag => {
+            renderTagGroup(tag.name);
         });
+
+        // 4. Render 'タグなし' group last
+        if (hasUntagged) {
+            renderTagGroup('タグなし');
+        }
+        // --- END NEW ---
 
         lucide.createIcons();
     }
@@ -640,13 +722,17 @@
     
     function renderReminders() {
         const container = $('#reminders-list-container');
+        const searchTerm = $('#reminder-search').value.toLowerCase(); // 検索機能
         container.innerHTML = '';
-        if(state.todos.length === 0) {
-             container.innerHTML = `<div class="text-center text-gray-500 mt-8">設定可能なタスクはありません。</div>`;
+
+        const todosToRender = state.todos.filter(todo => todo.text.toLowerCase().includes(searchTerm)); // 検索
+        
+        if(todosToRender.length === 0) { // 修正
+             container.innerHTML = `<div class="text-center text-gray-500 mt-8">${searchTerm ? '検索結果はありません。' : '設定可能なタスクはありません。'}</div>`; // 修正
             return;
         }
 
-        state.todos.forEach(todo => {
+        todosToRender.forEach(todo => { // 修正
             const hasReminder = todo.reminder && todo.reminder.period !== 'none';
             const reminderText = hasReminder ? `周期: ${todo.reminder.period}, 開始日: ${todo.reminder.startDate}` : 'リマインダー未設定';
             const item = document.createElement('div');
@@ -672,21 +758,37 @@
     }
 
     function renderTagsInModal() {
+        // state.tags should already be sorted by `order`
         const container = $('#tags-list');
         container.innerHTML = '';
-        state.tags.forEach(tag => {
+        const tagCount = state.tags.length;
+
+        state.tags.forEach((tag, index) => {
             const isDeadlineTag = tag.name === DEADLINE_TAG_NAME;
+            
+            // --- UPDATED: Allow moving deadline tag ---
+            const isFirst = index === 0;
+            const isLast = index === tagCount - 1;
+
             const deleteBtnHTML = isDeadlineTag 
-                ? `<span class="text-gray-500"><i data-lucide="lock" class="w-4 h-4"></i></span>`
+                ? `<span class="text-gray-500" title="このタグは削除できません"><i data-lucide="lock" class="w-4 h-4"></i></span>`
                 : `<button class="btn-delete-tag text-gray-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+            // --- END UPDATED ---
 
             container.innerHTML += `
                 <div class="flex items-center justify-between bg-gray-700 p-2 rounded-lg" data-id="${tag.id}">
-                    <div class="flex items-center">
-                        <span class="w-4 h-4 rounded-full mr-2" style="background-color: ${tag.color};"></span>
-                        <span>${tag.name}</span>
+                    <div class="flex items-center flex-grow overflow-hidden mr-2">
+                        <span class="w-4 h-4 rounded-full mr-2 flex-shrink-0" style="background-color: ${tag.color};"></span>
+                        <span class="${isDeadlineTag ? 'text-red-400 font-bold' : ''} truncate">${tag.name}</span>
                     </div>
-                    ${deleteBtnHTML}
+                    <div class="flex items-center space-x-2 flex-shrink-0">
+                        <!-- UPDATED: Allow moving deadline tag -->
+                        <div class="flex">
+                            <button class="btn-tag-move-up text-gray-400 hover:text-white ${isFirst ? 'opacity-30 cursor-not-allowed' : ''}" ${isFirst ? 'disabled' : ''}><i data-lucide="arrow-up-circle" class="w-5 h-5"></i></button>
+                            <button class="btn-tag-move-down text-gray-400 hover:text-white ${isLast ? 'opacity-30 cursor-not-allowed' : ''}" ${isLast ? 'disabled' : ''}><i data-lucide="arrow-down-circle" class="w-5 h-5"></i></button>
+                        </div>
+                        ${deleteBtnHTML}
+                    </div>
                 </div>
             `;
         });
@@ -696,6 +798,7 @@
     function renderTagsForTodo() {
         const container = $('#todo-tags-container');
         container.innerHTML = '';
+        // Render tags in their defined order
         state.tags.forEach(tag => {
             const isSelected = state.selectedTags.has(tag.id);
             const isDeadlineTag = tag.name === DEADLINE_TAG_NAME;
@@ -743,7 +846,35 @@
             }
             
             state.todos = validTodos;
-            state.tags = tags;
+            
+            // --- NEW: Tag order initialization ---
+            let maxOrder = 0;
+            let tagsNeedSave = false;
+            tags.forEach((tag, index) => {
+                if (tag.order === undefined || tag.order === null) {
+                    // --- UPDATED: Default deadline tag to top ---
+                    if (tag.name === DEADLINE_TAG_NAME) {
+                        tag.order = -1; // Give it highest priority
+                    } else {
+                        tag.order = index; // Assign order to existing tags
+                    }
+                    tagsNeedSave = true;
+                }
+                if (tag.order > maxOrder && tag.name !== DEADLINE_TAG_NAME) {
+                    maxOrder = tag.order;
+                }
+            });
+
+            if (tagsNeedSave) {
+                 (async () => {
+                    for (const tag of tags) {
+                        await dbPut('tags', tag);
+                    }
+                })();
+            }
+            state.tags = tags.sort((a, b) => (a.order || 0) - (b.order || 0));
+            // --- END NEW ---
+
             state.memos = memos;
 
             if (state.memos.length === 0) {
@@ -754,28 +885,45 @@
             }
             state.activeMemoId = state.memos[0].id;
             
-            if(state.tags.length === 0) {
+            // --- UPDATED: Check for non-deadline tags ---
+            if(state.tags.filter(t => t.name !== DEADLINE_TAG_NAME).length === 0) {
                  const defaultTags = [
-                    { id: crypto.randomUUID(), name: '買い物', color: '#3498db' }, // 青
-                    { id: crypto.randomUUID(), name: '作業', color: '#2ecc71' }, // 緑
-                    { id: crypto.randomUUID(), name: '手続き', color: '#f1c40f' }, // 黄
-                    { id: crypto.randomUUID(), name: '連絡', color: '#9b59b6' }, // 紫 (変更)
+                    { id: crypto.randomUUID(), name: '買い物', color: '#3498db', order: 1 }, // Start order from 1
+                    { id: crypto.randomUUID(), name: '作業', color: '#2ecc71', order: 2 },
+                    { id: crypto.randomUUID(), name: '手続き', color: '#f1c40f', order: 3 },
+                    { id: crypto.randomUUID(), name: '連絡', color: '#9b59b6', order: 4 },
                  ];
                  for (const tag of defaultTags) {
                      await dbPut('tags', tag);
                      state.tags.push(tag);
                  }
+                 state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
             
             if (!state.tags.some(t => t.name === DEADLINE_TAG_NAME)) {
-                const deadlineTag = { id: crypto.randomUUID(), name: DEADLINE_TAG_NAME, color: '#ef4444' };
-                await dbPut('tags', deadlineTag);
-                state.tags.push(deadlineTag);
+                // --- UPDATED: Default deadline tag to top ---
+                const newDeadlineTag = { id: crypto.randomUUID(), name: DEADLINE_TAG_NAME, color: '#ef4444', order: -1 };
+                await dbPut('tags', newDeadlineTag);
+                state.tags.push(newDeadlineTag);
+                state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
 
             settings.forEach(setting => {
                 state.settings[setting.key] = setting.value;
             });
+
+            // NEW: Load sort setting (set default if not found)
+            state.settings.todoSortBy = settings.find(s => s.key === 'todoSortBy')?.value || 'priority';
+
+            // アコーディオン状態の読み込み
+            const expandedTagsSetting = settings.find(s => s.key === 'userExpandedTags');
+            const collapsedTagsSetting = settings.find(s => s.key === 'userCollapsedTags');
+            if (expandedTagsSetting) {
+                state.userExpandedTags = new Set(expandedTagsSetting.value);
+            }
+            if (collapsedTagsSetting) {
+                state.userCollapsedTags = new Set(collapsedTagsSetting.value);
+            }
 
             await checkAutoCompletion();
         } catch (err) {
@@ -940,12 +1088,19 @@
         }
 
         try {
+            // NEW: Assign order
+            const maxOrder = Math.max(0, ...state.tags
+                .filter(t => t.order !== undefined && t.order !== null)
+                .map(t => t.order));
+
             const newTag = {
                 id: crypto.randomUUID(),
                 name: name,
-                color: $('#new-tag-color').value
+                color: $('#new-tag-color').value,
+                order: maxOrder + 1
             };
             state.tags.push(newTag);
+            state.tags.sort((a, b) => (a.order || 0) - (b.order || 0)); // Re-sort
             await dbPut('tags', newTag);
             $('#new-tag-name').value = '';
             renderTagsInModal();
@@ -983,10 +1138,64 @@
                 console.error('Failed to delete tag:', err);
                 showInfoModal(`タグの削除に失敗しました。\nエラー: ${err.message}`, '削除エラー');
                 state.tags.push(tagToDelete); // Revert state
+                state.tags.sort((a, b) => (a.order || 0) - (b.order || 0)); // Re-sort
             }
         });
     }
+
+    // --- NEW: Tag sorting function ---
+    async function handleMoveTag(id, direction) {
+        const index = state.tags.findIndex(t => t.id === id);
+        if (index === -1) return;
+
+        const newIndex = index + direction;
+
+        // Check bounds
+        if (newIndex < 0 || newIndex >= state.tags.length) return;
+        
+        const tagA = state.tags[index];
+        const tagB = state.tags[newIndex];
+        
+        if (!tagA || !tagB) {
+             return; // Safety check
+        }
+
+        // Swap order property
+        const tempOrder = tagA.order;
+        tagA.order = tagB.order;
+        tagB.order = tempOrder;
+        
+        try {
+            await dbPut('tags', tagA);
+            await dbPut('tags', tagB);
+            
+            state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
+            renderTagsInModal();
+            renderTodos();
+        } catch (err) {
+            console.error('Failed to move tag:', err);
+            showInfoModal('タグの移動に失敗しました。');
+            // Revert
+            tagB.order = tagA.order;
+            tagA.order = tempOrder;
+            state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
+        }
+    }
     
+    // --- NEW: Todo sorting function ---
+    async function handleSetTodoSort(sortKey) {
+        state.settings.todoSortBy = sortKey;
+        try {
+            await dbPut('settings', { key: 'todoSortBy', value: sortKey });
+            closeModal();
+            renderTodos();
+        } catch (err) {
+             console.error('Failed to save sort setting:', err);
+             showInfoModal('並び替え設定の保存に失敗しました。');
+             state.settings.todoSortBy = 'priority'; // Revert
+        }
+    }
+
     async function handleSaveReminder() {
         const todo = state.todos.find(t => t.id === state.editingReminderTodoId);
         if (!todo) return;
@@ -1248,6 +1457,21 @@
     // Debounced search/render function
     const debouncedRenderTodos = debounce(renderTodos, 300); // 300ms delay
 
+    // リマインダー検索用 (追加)
+    const debouncedRenderReminders = debounce(renderReminders, 300); // 300ms delay
+
+    // アコーディオン状態保存用 (追加)
+    async function saveAccordionState() {
+        try {
+            await dbPut('settings', { key: 'userExpandedTags', value: Array.from(state.userExpandedTags) });
+            await dbPut('settings', { key: 'userCollapsedTags', value: Array.from(state.userCollapsedTags) });
+        } catch (err) {
+            console.error('Failed to save accordion state:', err);
+            // ユーザーに通知するほど重大ではない
+        }
+    }
+    const debouncedSaveAccordionState = debounce(saveAccordionState, 1000); // 1秒ディレイ
+
     // --- EVENT LISTENERS ---
     function setupEventListeners() {
         $('nav').addEventListener('click', handleTabClick);
@@ -1300,9 +1524,20 @@
         $('#todo-due-date').addEventListener('change', renderTagsForTodo);
         
         $('#btn-add-tag').addEventListener('click', handleAddTag);
+        
+        // --- UPDATED: Tag list listener for move buttons ---
         $('#tags-list').addEventListener('click', (e) => {
-            const button = e.target.closest('.btn-delete-tag');
-            if (button) handleDeleteTag(button.closest('[data-id]').dataset.id);
+            const row = e.target.closest('[data-id]');
+            if (!row) return;
+            const id = row.dataset.id;
+            
+            if (e.target.closest('.btn-delete-tag')) {
+                handleDeleteTag(id);
+            } else if (e.target.closest('.btn-tag-move-up')) {
+                handleMoveTag(id, -1);
+            } else if (e.target.closest('.btn-tag-move-down')) {
+                handleMoveTag(id, 1);
+            }
         });
 
         $('#todo-list-container').addEventListener('click', e => {
@@ -1330,27 +1565,25 @@
             } else if (deleteBtn) {
                  handleDeleteTodo(deleteBtn.closest('[data-id]').dataset.id);
             } else if (header) {
-                // --- NEW: Accordion state saving ---
+                // --- Accordion state saving ---
                 const tasksWrapper = header.nextElementSibling;
                 const icon = header.querySelector('.accordion-icon');
                 const tagName = header.dataset.tagName;
                 const isCurrentlyCollapsed = tasksWrapper.classList.contains('hidden');
                 
                 if (isCurrentlyCollapsed) {
-                    // It's about to be expanded
                     state.userExpandedTags.add(tagName);
                     state.userCollapsedTags.delete(tagName);
                     tasksWrapper.classList.remove('hidden');
                     icon.setAttribute('data-lucide', 'chevron-down');
                 } else {
-                    // It's about to be collapsed
                     state.userCollapsedTags.add(tagName);
                     state.userExpandedTags.delete(tagName);
                     tasksWrapper.classList.add('hidden');
                     icon.setAttribute('data-lucide', 'chevron-right');
                 }
                 lucide.createIcons({nodes: [icon]});
-                // --- END NEW ---
+                debouncedSaveAccordionState(); // 状態を保存
             }
         });
         
@@ -1370,8 +1603,6 @@
         $('#btn-cancel-add-memo-page').addEventListener('click', closeModal);
         $('#btn-save-rename-memo-page').addEventListener('click', handleSaveRenameMemoPage);
         $('#btn-cancel-rename-memo-page').addEventListener('click', closeModal);
-        // --- ここまで追加 ---
-
 
         $('#btn-save-reminder').addEventListener('click', handleSaveReminder);
         $('#btn-delete-reminder').addEventListener('click', handleDeleteReminder);
@@ -1385,7 +1616,18 @@
 
         // --- UPDATED with Debounce ---
         $('#todo-search').addEventListener('input', debouncedRenderTodos);
+        $('#reminder-search').addEventListener('input', debouncedRenderReminders); // リマインダー検索 (追加)
         
+        // --- NEW: Sort modal listeners ---
+        $('#btn-sort-todo').addEventListener('click', () => openModal('modal-sort-todo'));
+        $('#btn-close-sort-todo-modal').addEventListener('click', closeModal);
+        $('#sort-options-container').addEventListener('click', (e) => {
+            const button = e.target.closest('.sort-option-btn');
+            if (button) {
+                handleSetTodoSort(button.dataset.sort);
+            }
+        });
+
         // Generic modal listeners
         $('#btn-info-ok').addEventListener('click', closeModal);
         $('#btn-confirm-cancel').addEventListener('click', closeModal);
