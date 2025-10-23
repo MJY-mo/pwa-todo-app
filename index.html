@@ -93,11 +93,16 @@
 
             <!-- Reminders Tab -->
             <div id="tab-reminders" class="tab-content p-4 hidden">
-                <!-- リマインダー検索バーを追加 -->
+                <!-- リマインダー検索バーとソートボタン (NEW) -->
                 <div class="flex justify-between items-center mb-4">
                     <h1 class="text-2xl font-bold">リマインダー設定</h1>
-                    <div class="relative">
-                        <input type="search" id="reminder-search" placeholder="タスクを検索..." class="bg-gray-700 border border-gray-600 rounded-full py-2 px-4 w-40 sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="flex items-center space-x-2">
+                        <button id="btn-sort-reminders" class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-700">
+                            <i data-lucide="arrow-up-down" class="w-5 h-5"></i>
+                        </button>
+                        <div class="relative">
+                            <input type="search" id="reminder-search" placeholder="タスクを検索..." class="bg-gray-700 border border-gray-600 rounded-full py-2 px-4 w-36 sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
                     </div>
                 </div>
                 <div id="reminders-list-container">
@@ -291,7 +296,7 @@
                     <p class="text-sm">「TODO」画面の右下にある青い<span class="inline-flex items-center justify-center bg-blue-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="plus" class="w-4 h-4"></i></span>ボタンを押すと、新しいタスクの入力画面が開きます。</p>
                 </div>
                 <div class="border-t border-gray-700 pt-3">
-                    <h3 class="font-semibold text-white">タスクの並び替え（NEW）</h3>
+                    <h3 class="font-semibold text-white">タスクの並び替え (TODO)</h3>
                     <p class="text-sm">「TODO」画面の右上にある<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-down" class="w-4 h-4"></i></span>ボタンを押すと、「優先度順」「期限日順」などでタスクの表示順を変更できます。</p>
                 </div>
                 <div class="border-t border-gray-700 pt-3">
@@ -303,11 +308,11 @@
                     <p class="text-sm">「TODO」画面の右下にある紫の<span class="inline-flex items-center justify-center bg-purple-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="archive" class="w-4 h-4"></i></span>ボタンを押すと、「完了済みタスク」の一覧に切り替わります。もう一度押すと「未完了タスク」の表示に戻ります。</p>
                 </div>
                  <div class="border-t border-gray-700 pt-3">
-                    <h3 class="font-semibold text-white">リマインダーの設定</h3>
-                    <p class="text-sm">「リマインダー」タブを開き、設定したいタスクをタップすると、周期や開始日を設定できます。「自動で完了」をオンにすると、毎週の特売日のような、日付が変わると自動で終わるタスクを完了済みに移動させることができます。</p>
+                    <h3 class="font-semibold text-white">リマインダーの設定と並び替え (NEW)</h3>
+                    <p class="text-sm">「リマインダー」タブを開き、設定したいタスクをタップすると、周期や開始日を設定できます。「自動で完了」をオンにすると、日付が変わると自動で終わるタスクを完了済みに移動できます。また、右上にある<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-down" class="w-4 h-4"></i></span>ボタンで、タスクの並び順も変更できます。</p>
                 </div>
                  <div class="border-t border-gray-700 pt-3">
-                    <h3 class="font-semibold text-white">タグの管理と並び替え（NEW）</h3>
+                    <h3 class="font-semibold text-white">タグの管理と並び替え (NEW)</h3>
                     <p class="text-sm">「TODO」画面の右下にあるグレーの<span class="inline-flex items-center justify-center bg-gray-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="tags" class="w-4 h-4"></i></span>ボタンを押すと、「タグ管理」画面が開きます。各タグの横に表示される<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i></span><span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i></span>ボタンで、TODOリストに表示されるタググループの順序を変更できます。</p>
                 </div>
                 <div class="border-t border-gray-700 pt-3">
@@ -358,7 +363,7 @@
     <!-- TODO Sort Modal (NEW) -->
     <div id="modal-sort-todo" class="modal fixed inset-0 z-50 items-center justify-center p-4">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
-            <h2 class="text-xl font-bold">タスクの並び替え</h2>
+            <h2 class="text-xl font-bold">TODOの並び替え</h2>
             <div id="sort-options-container" class="flex flex-col space-y-2">
                 <button data-sort="priority" class="sort-option-btn text-left p-3 rounded-lg hover:bg-gray-700">優先度順</button>
                 <button data-sort="dueDate" class="sort-option-btn text-left p-3 rounded-lg hover:bg-gray-700">期限日順</button>
@@ -367,6 +372,22 @@
             </div>
             <div class="flex justify-end">
                 <button id="btn-close-sort-todo-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">閉じる</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reminder Sort Modal (NEW) -->
+    <div id="modal-sort-reminders" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 class="text-xl font-bold">リマインダーの並び替え</h2>
+            <div id="sort-options-container-reminders" class="flex flex-col space-y-2">
+                <button data-sort="priority" class="sort-option-btn-reminder text-left p-3 rounded-lg hover:bg-gray-700">優先度順</button>
+                <button data-sort="dueDate" class="sort-option-btn-reminder text-left p-3 rounded-lg hover:bg-gray-700">期限日順</button>
+                <button data-sort="createdAt" class="sort-option-btn-reminder text-left p-3 rounded-lg hover:bg-gray-700">作成日順</button>
+                <button data-sort="name" class="sort-option-btn-reminder text-left p-3 rounded-lg hover:bg-gray-700">名前順</button>
+            </div>
+            <div class="flex justify-end">
+                <button id="btn-close-sort-reminders-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">閉じる</button>
             </div>
         </div>
     </div>
@@ -397,7 +418,7 @@
 
 <script>
 // =================================================================================
-// PWA TODO App - Main JavaScript Logic (v2.4)
+// PWA TODO App - Main JavaScript Logic (v2.5)
 // =================================================================================
 (function() {
     'use strict';
@@ -418,6 +439,7 @@
             bgColor: '#1a202c',
             textColor: '#ffffff',
             todoSortBy: 'priority', // NEW: todo sort setting
+            reminderSortBy: 'priority', // NEW: reminder sort setting
         },
         editingTodoId: null,
         editingReminderTodoId: null,
@@ -520,8 +542,14 @@
 
         // NEW: Highlight active sort option
         if (modalId === 'modal-sort-todo') {
-            $$('.sort-option-btn').forEach(btn => {
+            $$('#sort-options-container .sort-option-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.sort === state.settings.todoSortBy);
+            });
+        }
+        // NEW: Highlight active reminder sort option
+        if (modalId === 'modal-sort-reminders') {
+            $$('#sort-options-container-reminders .sort-option-btn-reminder').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sort === state.settings.reminderSortBy);
             });
         }
     }
@@ -580,7 +608,6 @@
         filteredTodos.sort((a, b) => {
             switch (sortKey) {
                 case 'dueDate':
-                    // Null/empty dates go to the end
                     return (a.dueDate || '9999-12-31').localeCompare(b.dueDate || '9999-12-31') || (b.priority || 1) - (a.priority || 1);
                 case 'createdAt':
                     return b.createdAt - a.createdAt;
@@ -725,8 +752,25 @@
         const searchTerm = $('#reminder-search').value.toLowerCase(); // 検索機能
         container.innerHTML = '';
 
-        const todosToRender = state.todos.filter(todo => todo.text.toLowerCase().includes(searchTerm)); // 検索
+        let todosToRender = state.todos.filter(todo => todo.text.toLowerCase().includes(searchTerm)); // 検索
         
+        // --- NEW: Apply Sorting for Reminders ---
+        const sortKey = state.settings.reminderSortBy;
+        todosToRender.sort((a, b) => {
+            switch (sortKey) {
+                case 'dueDate':
+                    return (a.dueDate || '9999-12-31').localeCompare(b.dueDate || '9999-12-31') || (b.priority || 1) - (a.priority || 1);
+                case 'createdAt':
+                    return b.createdAt - a.createdAt;
+                case 'name':
+                    return a.text.localeCompare(b.text);
+                case 'priority':
+                default:
+                    return (b.priority || 1) - (a.priority || 1) || b.createdAt - a.createdAt;
+            }
+        });
+        // --- END NEW ---
+
         if(todosToRender.length === 0) { // 修正
              container.innerHTML = `<div class="text-center text-gray-500 mt-8">${searchTerm ? '検索結果はありません。' : '設定可能なタスクはありません。'}</div>`; // 修正
             return;
@@ -914,6 +958,8 @@
 
             // NEW: Load sort setting (set default if not found)
             state.settings.todoSortBy = settings.find(s => s.key === 'todoSortBy')?.value || 'priority';
+            // NEW: Load reminder sort setting
+            state.settings.reminderSortBy = settings.find(s => s.key === 'reminderSortBy')?.value || 'priority';
 
             // アコーディオン状態の読み込み
             const expandedTagsSetting = settings.find(s => s.key === 'userExpandedTags');
@@ -1195,6 +1241,20 @@
              state.settings.todoSortBy = 'priority'; // Revert
         }
     }
+    
+    // --- NEW: Reminder sorting function ---
+    async function handleSetReminderSort(sortKey) {
+        state.settings.reminderSortBy = sortKey;
+        try {
+            await dbPut('settings', { key: 'reminderSortBy', value: sortKey });
+            closeModal();
+            renderReminders();
+        } catch (err) {
+             console.error('Failed to save reminder sort setting:', err);
+             showInfoModal('並び替え設定の保存に失敗しました。');
+             state.settings.reminderSortBy = 'priority'; // Revert
+        }
+    }
 
     async function handleSaveReminder() {
         const todo = state.todos.find(t => t.id === state.editingReminderTodoId);
@@ -1426,7 +1486,7 @@
         showConfirmModal(`「${memoName}」を削除しますか？`, async () => {
             try {
                 const deletedId = state.activeMemoId;
-                const deletedMemo = state.memos.find(m => m.id === deletedId);
+                const deletedMemo = state.mSemos.find(m => m.id === deletedId);
                 state.memos = state.memos.filter(m => m.id !== deletedId);
                 state.activeMemoId = state.memos[0]?.id || null;
                 await dbDelete('memos', deletedId);
@@ -1625,6 +1685,16 @@
             const button = e.target.closest('.sort-option-btn');
             if (button) {
                 handleSetTodoSort(button.dataset.sort);
+            }
+        });
+
+        // --- NEW: Reminder Sort modal listeners ---
+        $('#btn-sort-reminders').addEventListener('click', () => openModal('modal-sort-reminders'));
+        $('#btn-close-sort-reminders-modal').addEventListener('click', closeModal);
+        $('#sort-options-container-reminders').addEventListener('click', (e) => {
+            const button = e.target.closest('.sort-option-btn-reminder');
+            if (button) {
+                handleSetReminderSort(button.dataset.sort);
             }
         });
 
