@@ -45,8 +45,10 @@
         .tag-header {
             cursor: pointer;
         }
-        /* Sort option highlight */
-        .sort-option-btn.active, .sort-option-btn-reminder.active {
+        /* Sort/Filter option highlight */
+        .sort-option-btn.active, 
+        .sort-option-btn-reminder.active, 
+        .filter-option-btn-reminder.active {
             background-color: #3b82f6;
             color: white;
         }
@@ -55,8 +57,8 @@
 <body class="bg-gray-900 text-white antialiased">
 
     <div id="app" class="h-screen w-screen flex flex-col">
-        <!-- Main Content -->
-        <main class="flex-grow overflow-y-auto pb-20">
+        <!-- Main Content (pb-20 -> pb-40) -->
+        <main class="flex-grow overflow-y-auto pb-40">
             <!-- TODO List Tab -->
             <div id="tab-todo" class="tab-content p-4">
                 <div class="flex justify-between items-center mb-4">
@@ -84,7 +86,7 @@
                  <div class="flex items-center gap-2 mb-2">
                     <select id="memo-page-select" class="flex-grow bg-gray-700 border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
                     <button id="btn-add-memo-page" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg"><i data-lucide="plus"></i></button>
-                    <!-- メモ編集ボタンを追加 -->
+                    <!-- メモ編集ボタン -->
                     <button id="btn-edit-memo-page" class="bg-yellow-600 hover:bg-yellow-700 text-white p-2 rounded-lg"><i data-lucide="pencil"></i></button>
                     <button id="btn-delete-memo-page" class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"><i data-lucide="trash-2"></i></button>
                 </div>
@@ -93,10 +95,14 @@
 
             <!-- Reminders Tab -->
             <div id="tab-reminders" class="tab-content p-4 hidden">
-                <!-- リマインダー検索バーとソートボタン (NEW) -->
+                <!-- リマインダー検索バーとソート/フィルターボタン -->
                 <div class="flex justify-between items-center mb-4">
                     <h1 class="text-2xl font-bold">リマインダー設定</h1>
                     <div class="flex items-center space-x-2">
+                        <!-- 絞り込みボタン (New) -->
+                        <button id="btn-filter-reminders" class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-700">
+                            <i data-lucide="filter" class="w-5 h-5"></i>
+                        </button>
                         <button id="btn-sort-reminders" class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-700">
                             <i data-lucide="arrow-up-down" class="w-5 h-5"></i>
                         </button>
@@ -144,12 +150,13 @@
                 </div>
                 <div class="bg-gray-800 p-4 rounded-lg">
                     <h2 class="text-lg font-semibold mb-2">リセット</h2>
-                    <button id="btn-reset-frequency" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg w-full">移動回数をリセット</button>
+                    <!-- ボタン表記変更 -->
+                    <button id="btn-reset-frequency" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg w-full">完了回数（頻度）のリセット</button>
                 </div>
             </div>
         </main>
 
-        <!-- Floating Action Buttons (配置変更) -->
+        <!-- Floating Action Buttons -->
         <div id="fab-container" class="fixed bottom-20 left-0 right-0 z-20 flex justify-center items-center space-x-3">
             <button id="btn-add-todo" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 fab-button">
                 <i data-lucide="plus"></i>
@@ -162,7 +169,7 @@
             </button>
         </div>
 
-        <!-- Bottom Tab Navigation (順序変更) -->
+        <!-- Bottom Tab Navigation -->
         <nav class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 flex justify-around">
             <button data-tab="todo" class="tab-button flex-1 p-3 flex flex-col items-center text-blue-400">
                 <i data-lucide="list-checks"></i>
@@ -293,7 +300,7 @@
 
                 <div class="border-t border-gray-700 pt-3">
                     <h3 class="font-semibold text-white">タスクの追加</h3>
-                    <p class="text-sm">「TODO」画面の右下にある青い<span class="inline-flex items-center justify-center bg-blue-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="plus" class="w-4 h-4"></i></span>ボタンを押すと、新しいタスクの入力画面が開きます。</p>
+                    <p class="text-sm">「TODO」画面の下部中央にある<span class="inline-flex items-center justify-center bg-blue-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="plus" class="w-4 h-4"></i></span>ボタンを押すと、新しいタスクの入力画面が開きます。</p>
                 </div>
                 <div class="border-t border-gray-700 pt-3">
                     <h3 class="font-semibold text-white">タスクの並び替え (TODO)</h3>
@@ -305,23 +312,24 @@
                 </div>
                 <div class="border-t border-gray-700 pt-3">
                     <h3 class="font-semibold text-white">完了済みタスクの表示</h3>
-                    <p class="text-sm">「TODO」画面の右下にある紫の<span class="inline-flex items-center justify-center bg-purple-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="archive" class="w-4 h-4"></i></span>ボタンを押すと、「完了済みタスク」の一覧に切り替わります。もう一度押すと「未完了タスク」の表示に戻ります。</p>
+                    <p class="text-sm">「TODO」画面の下部中央にある紫の<span class="inline-flex items-center justify-center bg-purple-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="archive" class="w-4 h-4"></i></span>ボタンを押すと、「完了済みタスク」の一覧に切り替わります。もう一度押すと「未完了タスク」の表示に戻ります。</p>
                 </div>
                  <div class="border-t border-gray-700 pt-3">
-                    <h3 class="font-semibold text-white">リマインダーの設定と並び替え</h3>
-                    <p class="text-sm">「リマインダー」タブを開き、設定したいタスクをタップすると、周期や開始日を設定できます。「自動で完了」をオンにすると、日付が変わると自動で終わるタスクを完了済みに移動できます。また、右上にある<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-down" class="w-4 h-4"></i></span>ボタンで、タスクの並び順も変更できます。</p>
+                    <h3 class="font-semibold text-white">リマインダーの設定 / 並び替え / 絞り込み</h3>
+                    <p class="text-sm">「リマインダー」タブを開き、設定したいタスクをタップすると、周期や開始日を設定できます。「自動で完了」をオンにすると、日付が変わると自動で終わるタスクを完了済みに移動できます。また、右上にある<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="filter" class="w-4 h-4"></i></span>ボタンでタグによる絞り込み、<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-down" class="w-4 h-4"></i></span>ボタンでタスクの並び順も変更できます。</p>
                 </div>
                  <div class="border-t border-gray-700 pt-3">
                     <h3 class="font-semibold text-white">タグの管理と並び替え</h3>
-                    <p class="text-sm">「TODO」画面の右下にあるグレーの<span class="inline-flex items-center justify-center bg-gray-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="tags" class="w-4 h-4"></i></span>ボタンを押すと、「タグ管理」画面が開きます。各タグの横に表示される<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i></span><span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i></span>ボタンで、TODOリストに表示されるタググループの順序を変更できます。</p>
+                    <p class="text-sm">「TODO」画面の下部中央にあるグレーの<span class="inline-flex items-center justify-center bg-gray-600 rounded-full w-5 h-5 mx-1 align-middle"><i data-lucide="tags" class="w-4 h-4"></i></span>ボタンを押すと、「タグ管理」画面が開きます。各タグの横に表示される<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i></span><span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="arrow-down-circle" class="w-4 h-4"></i></span>ボタンで、TODOリストに表示されるタググループの順序を変更できます。</p>
                 </div>
                 <div class="border-t border-gray-700 pt-3">
                     <h3 class="font-semibold text-white">タスクの編集と削除</h3>
                     <p class="text-sm">各タスクの右側にある<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="pencil" class="w-4 h-4"></i></span>ボタンで編集、<span class="inline-flex items-center justify-center text-gray-400 mx-1 align-middle"><i data-lucide="trash-2" class="w-4 h-4"></i></span>ボタンで削除ができます。</p>
                 </div>
+                <!-- ヘルプテキスト変更 -->
                 <div class="border-t border-gray-700 pt-3">
-                    <h3 class="font-semibold text-white">移動回数のリセット</h3>
-                    <p class="text-sm">「設定」タブの「移動回数をリセット」ボタンを押すと、全タスクの完了回数がリセットされます。これは「完了済みタスク」一覧の並び順に影響します。</p>
+                    <h3 class="font-semibold text-white">完了回数（頻度）のリセット</h3>
+                    <p class="text-sm">「設定」タブの「完了回数（頻度）のリセット」ボタンを押すと、全タスクの完了回数がリセットされます。これは「完了済みタスク」一覧の並び順に影響します。</p>
                 </div>
             </div>
             <div class="flex justify-end mt-4">
@@ -345,7 +353,7 @@
         </div>
     </div>
 
-    <!-- Rename Memo Page Modal (追加) -->
+    <!-- Rename Memo Page Modal -->
     <div id="modal-rename-memo-page" class="modal fixed inset-0 z-50 items-center justify-center p-4">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
             <h2 class="text-xl font-bold">メモページの名称変更</h2>
@@ -360,7 +368,7 @@
         </div>
     </div>
 
-    <!-- TODO Sort Modal (NEW) -->
+    <!-- TODO Sort Modal -->
     <div id="modal-sort-todo" class="modal fixed inset-0 z-50 items-center justify-center p-4">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
             <h2 class="text-xl font-bold">TODOの並び替え</h2>
@@ -376,7 +384,7 @@
         </div>
     </div>
     
-    <!-- Reminder Sort Modal (NEW) -->
+    <!-- Reminder Sort Modal -->
     <div id="modal-sort-reminders" class="modal fixed inset-0 z-50 items-center justify-center p-4">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
             <h2 class="text-xl font-bold">リマインダーの並び替え</h2>
@@ -388,6 +396,19 @@
             </div>
             <div class="flex justify-end">
                 <button id="btn-close-sort-reminders-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder Filter Modal (New) -->
+    <div id="modal-filter-reminders" class="modal fixed inset-0 z-50 items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 class="text-xl font-bold">リマインダーのタグ絞り込み</h2>
+            <div id="filter-options-container-reminders" class="flex flex-col space-y-2 max-h-60 overflow-y-auto">
+                <!-- Filter options will be rendered here -->
+            </div>
+            <div class="flex justify-end">
+                <button id="btn-close-filter-reminders-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">閉じる</button>
             </div>
         </div>
     </div>
@@ -418,7 +439,7 @@
 
 <script>
 // =================================================================================
-// PWA TODO App - Main JavaScript Logic (v2.6)
+// PWA TODO App - Main JavaScript Logic (v2.8)
 // =================================================================================
 (function() {
     'use strict';
@@ -440,7 +461,8 @@
             textColor: '#ffffff',
             todoSortBy: 'priority',
             reminderSortBy: 'priority',
-            activeMemoId: null, // NEW: Store last active memo ID
+            reminderFilterByTag: 'all', // New: 'all', 'untagged', or a tagId
+            activeMemoId: null, // Store last active memo ID
         },
         editingTodoId: null,
         editingReminderTodoId: null,
@@ -550,6 +572,10 @@
             $$('#sort-options-container-reminders .sort-option-btn-reminder').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.sort === state.settings.reminderSortBy);
             });
+        }
+        // New: Populate filter modal
+        if (modalId === 'modal-filter-reminders') {
+            renderReminderFilterOptions();
         }
     }
 
@@ -724,7 +750,6 @@
         const select = $('#memo-page-select');
         select.innerHTML = '';
         
-        // --- NEW: Handle memo state memory ---
         if (state.memos.length === 0) {
             $('#memo-textarea').value = '';
             return;
@@ -736,7 +761,6 @@
         if (!activeIdExists) {
             (async () => await handleSettingsChange('activeMemoId', state.activeMemoId))();
         }
-        // --- END NEW ---
 
         state.memos.forEach(memo => {
             const option = document.createElement('option');
@@ -752,13 +776,28 @@
         $('#memo-textarea').value = activeMemo ? activeMemo.content : '';
     }
     
+    // Updated: renderReminders with filtering
     function renderReminders() {
         const container = $('#reminders-list-container');
         const searchTerm = $('#reminder-search').value.toLowerCase();
+        const filterTagId = state.settings.reminderFilterByTag;
         container.innerHTML = '';
 
-        let todosToRender = state.todos.filter(todo => todo.text.toLowerCase().includes(searchTerm));
+        // Apply filter first
+        let todosToRender = state.todos.filter(todo => {
+            const matchesSearch = todo.text.toLowerCase().includes(searchTerm);
+            if (!matchesSearch) return false;
+
+            if (filterTagId === 'all') {
+                return true;
+            }
+            if (filterTagId === 'untagged') {
+                return todo.tags.length === 0;
+            }
+            return todo.tags.includes(filterTagId);
+        });
         
+        // Then apply sort
         const sortKey = state.settings.reminderSortBy;
         todosToRender.sort((a, b) => {
             switch (sortKey) {
@@ -775,7 +814,7 @@
         });
 
         if(todosToRender.length === 0) {
-             container.innerHTML = `<div class="text-center text-gray-500 mt-8">${searchTerm ? '検索結果はありません。' : '設定可能なタスクはありません。'}</div>`;
+             container.innerHTML = `<div class="text-center text-gray-500 mt-8">${searchTerm ? '検索結果はありません。' : (filterTagId !== 'all' ? '絞り込み結果はありません。' : '設定可能なタスクはありません。')}</div>`;
             return;
         }
 
@@ -804,11 +843,45 @@
         $('#setting-text-color').value = state.settings.textColor;
     }
 
+    // New: Render filter options in modal
+    function renderReminderFilterOptions() {
+        const container = $('#filter-options-container-reminders');
+        container.innerHTML = '';
+        
+        const createBtn = (tagId, name) => {
+            const btn = document.createElement('button');
+            btn.dataset.tagId = tagId;
+            btn.className = 'filter-option-btn-reminder text-left p-3 rounded-lg hover:bg-gray-700';
+            
+            // Add color span for tags
+            if (tagId !== 'all' && tagId !== 'untagged') {
+                const tag = state.tags.find(t => t.id === tagId);
+                const color = tag ? tag.color : '#718096';
+                btn.innerHTML = `<span class="w-3 h-3 rounded-full mr-2 inline-block" style="background-color: ${color};"></span> ${name}`;
+            } else {
+                btn.textContent = name;
+            }
+            
+            if (state.settings.reminderFilterByTag === tagId) {
+                btn.classList.add('active'); // 'active' class (blue background)
+            }
+            container.appendChild(btn);
+        };
+
+        createBtn('all', 'すべてのタグ');
+        // Sort tags by their order for the filter list
+        state.tags.sort((a, b) => (a.order || 0) - (b.order || 0)).forEach(tag => {
+            createBtn(tag.id, tag.name);
+        });
+        createBtn('untagged', 'タグなし');
+    }
+
     function renderTagsInModal() {
         const container = $('#tags-list');
         container.innerHTML = '';
         const tagCount = state.tags.length;
 
+        // Use the sorted state.tags array
         state.tags.forEach((tag, index) => {
             const isDeadlineTag = tag.name === DEADLINE_TAG_NAME;
             
@@ -841,6 +914,7 @@
     function renderTagsForTodo() {
         const container = $('#todo-tags-container');
         container.innerHTML = '';
+        // Render tags in their custom order
         state.tags.forEach(tag => {
             const isSelected = state.selectedTags.has(tag.id);
             const isDeadlineTag = tag.name === DEADLINE_TAG_NAME;
@@ -890,19 +964,37 @@
             
             let maxOrder = 0;
             let tagsNeedSave = false;
+            let deadlineTagExists = false;
+            // First pass: check for deadline tag and find max order
             tags.forEach((tag, index) => {
-                if (tag.order === undefined || tag.order === null) {
-                    if (tag.name === DEADLINE_TAG_NAME) {
-                        tag.order = -1;
-                    } else {
-                        tag.order = index;
-                    }
+                if (tag.name === DEADLINE_TAG_NAME) {
+                    deadlineTagExists = true;
+                }
+                if (tag.order !== undefined && tag.order !== null) {
+                    if (tag.order > maxOrder) maxOrder = tag.order;
+                } else {
+                    // Assign temporary order if missing
+                    tag.order = index + 1; // Use index as base
                     tagsNeedSave = true;
                 }
-                if (tag.order > maxOrder && tag.name !== DEADLINE_TAG_NAME) {
-                    maxOrder = tag.order;
-                }
             });
+
+            // Ensure order values are unique
+            const orders = new Set();
+            tags.forEach(tag => {
+                while (orders.has(tag.order)) {
+                    maxOrder++;
+                    tag.order = maxOrder;
+                    tagsNeedSave = true;
+                }
+                orders.add(tag.order);
+            });
+            
+            if (!deadlineTagExists) {
+                const newDeadlineTag = { id: crypto.randomUUID(), name: DEADLINE_TAG_NAME, color: '#ef4444', order: -1 };
+                tags.push(newDeadlineTag);
+                await dbPut('tags', newDeadlineTag);
+            }
 
             if (tagsNeedSave) {
                  (async () => {
@@ -921,8 +1013,6 @@
                 await dbPut('memos', firstMemo);
             }
             
-            // --- activeMemoId loading logic is now here ---
-            
             if(state.tags.filter(t => t.name !== DEADLINE_TAG_NAME).length === 0) {
                  const defaultTags = [
                     { id: crypto.randomUUID(), name: '買い物', color: '#3498db', order: 1 },
@@ -937,28 +1027,20 @@
                  state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
             
-            if (!state.tags.some(t => t.name === DEADLINE_TAG_NAME)) {
-                const newDeadlineTag = { id: crypto.randomUUID(), name: DEADLINE_TAG_NAME, color: '#ef4444', order: -1 };
-                await dbPut('tags', newDeadlineTag);
-                state.tags.push(newDeadlineTag);
-                state.tags.sort((a, b) => (a.order || 0) - (b.order || 0));
-            }
-
             settings.forEach(setting => {
                 state.settings[setting.key] = setting.value;
             });
 
             state.settings.todoSortBy = settings.find(s => s.key === 'todoSortBy')?.value || 'priority';
             state.settings.reminderSortBy = settings.find(s => s.key === 'reminderSortBy')?.value || 'priority';
+            state.settings.reminderFilterByTag = settings.find(s => s.key === 'reminderFilterByTag')?.value || 'all'; // Load filter
             
-            // --- NEW: Load active memo ID ---
             state.settings.activeMemoId = settings.find(s => s.key === 'activeMemoId')?.value || null;
             let activeIdExists = state.memos.some(m => m.id === state.settings.activeMemoId);
             state.activeMemoId = activeIdExists ? state.settings.activeMemoId : (state.memos[0]?.id || null);
             if (!activeIdExists && state.activeMemoId) {
                 await handleSettingsChange('activeMemoId', state.activeMemoId);
             }
-            // --- END NEW ---
 
             const expandedTagsSetting = settings.find(s => s.key === 'userExpandedTags');
             const collapsedTagsSetting = settings.find(s => s.key === 'userCollapsedTags');
@@ -1242,6 +1324,20 @@
         }
     }
 
+    // New: Handle Reminder Filter
+    async function handleSetReminderFilter(tagId) {
+        state.settings.reminderFilterByTag = tagId;
+        try {
+            await handleSettingsChange('reminderFilterByTag', tagId);
+            closeModal();
+            renderReminders();
+        } catch (err) {
+            console.error('Failed to save filter setting:', err);
+            showInfoModal('絞り込み設定の保存に失敗しました。');
+            state.settings.reminderFilterByTag = 'all';
+        }
+    }
+
     async function handleSaveReminder() {
         const todo = state.todos.find(t => t.id === state.editingReminderTodoId);
         if (!todo) return;
@@ -1394,7 +1490,7 @@
     }
     
     async function resetFrequency() {
-        showConfirmModal('すべてのTODOの移動回数をリセットしますか？', async () => {
+        showConfirmModal('すべてのTODOの完了回数（頻度）をリセットしますか？', async () => {
             try {
                 const updatedTodos = state.todos.map(todo => ({ ...todo, moveCount: 0 }));
                 await Promise.all(updatedTodos.map(todo => dbPut('todos', todo)));
@@ -1490,7 +1586,6 @@
         });
     }
     
-    // --- NEW: Function to handle memo page change and save state ---
     async function handleMemoPageChange(e) {
         state.activeMemoId = e.target.value;
         await handleSettingsChange('activeMemoId', state.activeMemoId);
@@ -1639,7 +1734,6 @@
         $('#memo-textarea').addEventListener('input', (e) => {
             debouncedSaveMemo(e.target.value);
         });
-        // --- UPDATED: Use new handler ---
         $('#memo-page-select').addEventListener('change', handleMemoPageChange);
         
         $('#btn-add-memo-page').addEventListener('click', handleOpenAddMemoModal);
@@ -1673,11 +1767,21 @@
         });
 
         $('#btn-sort-reminders').addEventListener('click', () => openModal('modal-sort-reminders'));
+        $('#btn-filter-reminders').addEventListener('click', () => openModal('modal-filter-reminders')); // New
         $('#btn-close-sort-reminders-modal').addEventListener('click', closeModal);
+        $('#btn-close-filter-reminders-modal').addEventListener('click', closeModal); // New
+        
         $('#sort-options-container-reminders').addEventListener('click', (e) => {
             const button = e.target.closest('.sort-option-btn-reminder');
             if (button) {
                 handleSetReminderSort(button.dataset.sort);
+            }
+        });
+        // New
+        $('#filter-options-container-reminders').addEventListener('click', (e) => {
+            const button = e.target.closest('.filter-option-btn-reminder');
+            if (button) {
+                handleSetReminderFilter(button.dataset.tagId);
             }
         });
 
